@@ -1,0 +1,16 @@
+{
+  "name": "健康工作台",
+  "short_name": "健康台",
+  "description": "健身计划、饮食换算、身体数据、实时资讯一体化工作台",
+  "lang": "zh-CN",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f4f2ee",
+  "theme_color": "#c2410c",
+  "icons": [
+    { "src": "./icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "./icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }
+  ]
+}

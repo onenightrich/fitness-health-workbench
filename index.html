@@ -6,6 +6,10 @@
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="default" />
 <meta name="theme-color" content="#f4f2ee" />
+<meta name="mobile-web-app-capable" content="yes" />
+<link rel="manifest" href="manifest.webmanifest" />
+<link rel="icon" type="image/svg+xml" href="icon.svg" />
+<link rel="apple-touch-icon" href="icon.svg" />
 <title>FitPulse · 减脂健康工作台</title>
 <style>
 :root{
@@ -2318,6 +2322,9 @@ function init(){
   setInterval(()=>{ if(T) document.getElementById('trainTime').textContent=fmtMMSS(Math.floor((Date.now()-T.startedAt)/1000)); },1000);
 }
 init();
+
+/* 注册 Service Worker：让工作台可"添加到主屏幕"变成独立 App，并离线可用 */
+if('serviceWorker' in navigator){ window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{})); }
 </script>
 </body>
 </html>
