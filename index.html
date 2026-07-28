@@ -310,6 +310,31 @@
   .t-rec{background:rgba(176,123,255,.16);color:#c4a8ff;}
   .t-sup{background:rgba(255,176,32,.16);color:#ffc861;}
 
+/* ===== 动作库（exercises-dataset） ===== */
+.libbar{position:sticky;top:0;z-index:5;background:var(--bg);padding:4px 0 8px;}
+.libsearch{display:flex;gap:8px;margin-bottom:8px;}
+.libsearch input{flex:1;background:var(--bg2);border:1px solid var(--line);color:var(--txt);border-radius:12px;padding:10px 12px;font-size:15px;}
+.libfilters{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:2px;}
+.libfilters .flab{width:100%;color:var(--sub);font-size:12px;margin:6px 0 0;}
+.chip2{padding:5px 10px;border:1px solid var(--line);border-radius:999px;background:var(--card);color:var(--sub);font-size:12.5px;cursor:pointer;}
+.chip2.on{background:var(--accent);border-color:transparent;color:#1a1205;font-weight:600;}
+.libgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:6px;}
+.libcard{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;cursor:pointer;border-left:3px solid var(--accent);}
+.libcard img{width:100%;height:118px;object-fit:cover;background:#0c1118;display:block;}
+.libcard .lc-body{padding:8px 9px;}
+.libcard .lc-name{font-size:13.5px;font-weight:600;line-height:1.25;color:var(--txt);}
+.libcard .lc-meta{font-size:11.5px;color:var(--sub);margin-top:3px;}
+.libmore{margin:14px auto;display:block;}
+.libempty{padding:30px 10px;text-align:center;color:var(--sub);font-size:14px;line-height:1.6;}
+.libdetail .lgif{width:100%;border-radius:12px;background:#0c1118;margin:6px 0 10px;max-height:260px;object-fit:contain;}
+.libdetail .lname{font-size:17px;font-weight:700;line-height:1.3;color:var(--txt);}
+.libdetail .lmeta{color:var(--sub);font-size:13px;margin:4px 0 8px;}
+.libdetail .lins{font-size:14px;line-height:1.75;color:var(--txt);white-space:pre-wrap;}
+.libdetail .lattr{font-size:11px;color:#6b7787;margin-top:10px;line-height:1.5;}
+.libdetail .lbtn{margin-top:14px;width:100%;}
+.libadd .row{margin:9px 0;}
+.libadd select,.libadd input{width:100%;background:var(--bg2);border:1px solid var(--line);color:var(--txt);border-radius:10px;padding:9px 10px;font-size:14px;}
+.libadd .row.flex{display:flex;gap:8px;}
 </style>
 </head>
 <body>
@@ -481,7 +506,18 @@
   </section>
 
   <!-- 身体 -->
-  <section class="section" id="sec-body">
+  <section class="section" id="sec-lib">
+  <div class="libbar">
+    <div class="libsearch"><input id="libSearch" type="text" placeholder="搜索动作，如 卧推 / squat" oninput="renderExLib()" /></div>
+    <div class="libfilters" id="libParts"></div>
+    <div class="libfilters" id="libEquip"></div>
+  </div>
+  <div class="libgrid" id="libGrid"></div>
+  <div class="libempty" id="libEmpty" style="display:none"></div>
+  <button class="btn ghost libmore" id="libMore" style="display:none" onclick="libLoadMore()">加载更多</button>
+</section>
+
+<section class="section" id="sec-body">
     <div class="card">
       <h3><span class="bar" style="background:var(--pink)"></span>录入身体数据</h3>
       <div class="row">
@@ -622,6 +658,7 @@
     <div class="tab active" data-t="today" onclick="goTab('today')"><span class="ic">🏠</span>今日</div>
     <div class="tab" data-t="diet" onclick="goTab('diet')"><span class="ic">🍱</span>饮食</div>
     <div class="tab" data-t="exercise" onclick="goTab('exercise')"><span class="ic">🏋️</span>运动</div>
+    <div class="tab" data-t="lib" onclick="goTab('lib')"><span class="ic">📚</span>动作库</div>
     <div class="tab" data-t="body" onclick="goTab('body')"><span class="ic">⚖️</span>身体</div>
     <div class="tab" data-t="supplements" onclick="goTab('supplements')"><span class="ic">💊</span>补剂</div>
     <div class="tab" data-t="news" onclick="goTab('news')"><span class="ic">📰</span>资讯</div>
@@ -840,6 +877,35 @@
   </div>
 </div>
 
+<!-- Exercise Library Detail -->
+<div class="mask" id="libDetailMask">
+  <div class="sheet libdetail">
+    <span class="close" onclick="closeSheet('libDetailMask')">×</span>
+    <img class="lgif" id="ldGif" src="" alt="动作示范" />
+    <div class="lname" id="ldName"></div>
+    <div class="lmeta" id="ldMeta"></div>
+    <div class="lins" id="ldIns"></div>
+    <div class="lattr" id="ldAttr"></div>
+    <button class="btn accent lbtn" onclick="libAddCurrent()">＋ 加入训练计划</button>
+  </div>
+</div>
+<!-- Add exercise to plan -->
+<div class="mask" id="libAddMask">
+  <div class="sheet libadd">
+    <span class="close" onclick="closeSheet('libAddMask')">×</span>
+    <h4>加入训练计划</h4>
+    <div class="row"><select id="libPlanSel"></select></div>
+    <div class="row"><input id="libNewPlan" type="text" placeholder="或输入新计划名称（留空则用所选计划）" /></div>
+    <div class="row flex">
+      <input id="libSets" type="number" value="3" placeholder="组" />
+      <input id="libWeight" type="number" value="20" placeholder="kg" />
+      <input id="libReps" type="number" value="12" placeholder="次" />
+    </div>
+    <div class="row"><input id="libRest" type="number" value="60" placeholder="组间休息(秒)" /></div>
+    <button class="btn accent" onclick="confirmLibAdd()">确认加入</button>
+  </div>
+</div>
+
 <script>
 /* ============ 数据层 ============ */
 const LS_KEY = 'health_workbench_v2';
@@ -940,6 +1006,7 @@ function goTab(name){
   if(name==='body') renderBody();
   if(name==='supplements') renderSupps();
   if(name==='news') renderNews();
+  if(name==='lib') loadExLib();
   if(name==='me') renderMe();
   window.scrollTo(0,0);
 }
@@ -1866,6 +1933,103 @@ function trainEditSet(ei,si){ const ex=T.logs[ei]; if(!ex||!ex.sets[si]) return;
 function trainAddSet(ei){ const ex=T.logs[ei]; if(!ex) return; ex.sets.push({weight:0,reps:0,done:false}); renderTraining(); }
 function trainRemoveSet(ei,si){ const ex=T.logs[ei]; if(!ex) return; if(ex.sets.length<=1){ toast('至少保留 1 组'); return; } ex.sets.splice(si,1); renderTraining(); }
 function trainRemoveEx(ei){ if(!confirm('从本次训练中移除该动作？')) return; T.logs.splice(ei,1); renderTraining(); }
+
+/* ============ 动作库（exercises-dataset） ============ */
+/* 数据来自 hasaneyldrm/exercises-dataset（1324 动作，含缩略图/动画GIF/中文指导），
+   运行时从 jsDelivr CDN 拉取并缓存到 localStorage；媒体 © Gym visual，须保留署名。 */
+const EXLIB_URL='https://cdn.jsdelivr.net/gh/hasaneyldrm/exercises-dataset@main/data/exercises.json';
+const EXLIB_MEDIA='https://cdn.jsdelivr.net/gh/hasaneyldrm/exercises-dataset@main/';
+let exLib=[], exLibFiltered=[], exLibPage=0, exLibCur=null;
+const EXLIB_PAGE=60;
+let exLibParts=[], exLibEquip=[], libFilt={part:null,equip:null};
+function exMedia(p){ return p? EXLIB_MEDIA+p : ''; }
+async function loadExLib(){
+  const grid=document.getElementById('libGrid');
+  if(!exLib.length){
+    grid.innerHTML='<div class="libempty">正在加载动作库…（首次需联网）</div>';
+    let data=null;
+    try{
+      const cached=localStorage.getItem('exlib_cache');
+      if(cached){ data=JSON.parse(cached); }
+      else { const r=await fetch(EXLIB_URL); if(!r.ok) throw 0; data=await r.json(); localStorage.setItem('exlib_cache', JSON.stringify(data)); }
+    }catch(e){ grid.innerHTML='<div class="libempty">动作库加载失败（首次需联网，或稍后重试）。<br>已缓存过则离线可用。</div>'; return; }
+    exLib=data||[];
+    exLibParts=[...new Set(exLib.map(x=>(x.body_part||x.category)).filter(Boolean))];
+    exLibEquip=[...new Set(exLib.map(x=>x.equipment).filter(Boolean))];
+    renderLibFilters();
+  }
+  exLibPage=0; renderExLib();
+}
+function renderLibFilters(){
+  document.getElementById('libParts').innerHTML='<div class="flab">部位</div>'+exLibParts.map(p=>`<span class="chip2" data-v="${esc(p)}" onclick="libToggle('part',this)">${esc(p)}</span>`).join('');
+  document.getElementById('libEquip').innerHTML='<div class="flab">器械</div>'+exLibEquip.map(p=>`<span class="chip2" data-v="${esc(p)}" onclick="libToggle('equip',this)">${esc(p)}</span>`).join('');
+}
+function libToggle(kind,el){
+  const v=el.dataset.v;
+  if(kind==='part'){ libFilt.part = libFilt.part===v?null:v; }
+  else { libFilt.equip = libFilt.equip===v?null:v; }
+  document.querySelectorAll('#libParts .chip2').forEach(c=>c.classList.toggle('on', c.dataset.v===libFilt.part));
+  document.querySelectorAll('#libEquip .chip2').forEach(c=>c.classList.toggle('on', c.dataset.v===libFilt.equip));
+  exLibPage=0; renderExLib();
+}
+function renderExLib(){
+  if(!exLib.length) return;
+  const q=(document.getElementById('libSearch').value||'').trim().toLowerCase();
+  exLibFiltered=exLib.filter(x=>{
+    if(libFilt.part && (x.body_part||x.category)!==libFilt.part) return false;
+    if(libFilt.equip && x.equipment!==libFilt.equip) return false;
+    if(q && !(x.name||'').toLowerCase().includes(q)) return false;
+    return true;
+  });
+  const grid=document.getElementById('libGrid'), empty=document.getElementById('libEmpty'), more=document.getElementById('libMore');
+  if(!exLibFiltered.length){ grid.innerHTML=''; empty.style.display='block'; empty.textContent='没有匹配的动作，换个关键词或筛选试试'; more.style.display='none'; return; }
+  empty.style.display='none';
+  const slice=exLibFiltered.slice(0,(exLibPage+1)*EXLIB_PAGE);
+  grid.innerHTML=slice.map(x=>`<div class="libcard" onclick="openLibEx('${x.id}')">
+    <img loading="lazy" src="${exMedia(x.image)}" alt="${esc(x.name)}" onerror="this.style.display='none'"/>
+    <div class="lc-body"><div class="lc-name">${esc(x.name)}</div>
+    <div class="lc-meta">${esc(x.body_part||x.category)} · ${esc(x.equipment)}</div></div>
+  </div>`).join('');
+  more.style.display = slice.length<exLibFiltered.length ? 'block':'none';
+}
+function libLoadMore(){ exLibPage++; renderExLib(); }
+function openLibEx(id){
+  const x=exLib.find(e=>e.id===id); if(!x) return;
+  exLibCur=x;
+  const g=document.getElementById('ldGif'); g.onerror=null;
+  g.onerror=()=>{ g.onerror=null; g.src=exMedia(x.image); };
+  g.src=exMedia(x.gif_url);
+  document.getElementById('ldName').textContent=x.name;
+  document.getElementById('ldMeta').textContent=`${(x.body_part||x.category)||''} · 目标：${x.target||'-'} · 器械：${x.equipment||'-'}`;
+  const ins=(x.instructions&&(x.instructions.zh||x.instructions.en))||'暂无文字指导';
+  document.getElementById('ldIns').textContent=ins;
+  document.getElementById('ldAttr').textContent='动作示范媒体 © '+(x.attribution||'Gym visual — https://gymvisual.com/');
+  document.getElementById('libDetailMask').classList.add('show');
+}
+function libAddCurrent(){ document.getElementById('libDetailMask').classList.remove('show'); openLibAdd(); }
+function openLibAdd(){
+  const sel=document.getElementById('libPlanSel');
+  sel.innerHTML = state.plans.map(p=>`<option value="${p.id}">${esc(p.name)}（${p.exercises.length}动作）</option>`).join('')
+    + '<option value="">— 新建计划 —</option>';
+  if(!state.plans.length) sel.value='';
+  document.getElementById('libAddMask').classList.add('show');
+}
+function confirmLibAdd(){
+  if(!exLibCur) return;
+  const x=exLibCur;
+  const newName=document.getElementById('libNewPlan').value.trim();
+  const selId=document.getElementById('libPlanSel').value;
+  const sets=parseInt(document.getElementById('libSets').value)||3;
+  const weight=parseFloat(document.getElementById('libWeight').value)||0;
+  const reps=parseInt(document.getElementById('libReps').value)||12;
+  const rest=parseInt(document.getElementById('libRest').value)||60;
+  let plan;
+  if(newName){ plan={id:uid(),name:newName,exercises:[]}; state.plans.push(plan); }
+  else if(selId){ plan=state.plans.find(p=>p.id===selId); }
+  if(!plan){ toast('请选择或填写计划名称'); return; }
+  plan.exercises.push({id:uid(),part:(x.body_part||x.category),name:x.name,sets,weight,reps,rest});
+  save(); closeSheet('libAddMask'); renderEx(); toast('已加入《'+plan.name+'》');
+}
 
 /* ============ 身体 ============ */
 function saveBody(){
