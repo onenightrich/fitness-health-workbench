@@ -4,129 +4,128 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-<meta name="theme-color" content="#0a0e14" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="theme-color" content="#f4f2ee" />
 <title>FitPulse · 减脂健康工作台</title>
 <style>
-  :root{
-    --bg:#0a0e14; --bg2:#0e131b; --card:#151b24; --card2:#1b232e;
-    --txt:#eef2f6; --sub:#8b98a8; --line:#232c38; --line2:#2c3744;
-    --accent:#ff7a18; --accent2:#ff9d2f; --accent-d:#e0640c;
-    --good:#34d399; --green:#34d399; --teal:#38bdf8; --red:#ff5470;
-    --amber:#ffb020; --indigo:#818cf8; --pink:#f472b6; --violet:#b07bff; --blue:#3b9dff;
-    --shadow:0 10px 30px rgba(0,0,0,.45);
-    --shadow-s:0 4px 18px rgba(0,0,0,.35);
-    --r:16px;
+:root{
+    /* UI Skills — quiet, editorial, neutral. Light parchment palette, one restrained accent. */
+    --bg:#f4f2ee;            /* page canvas (frames the 480px column on desktop) */
+    --bg2:#f7f6f3;          /* sunken / input surface */
+    --card:#ffffff;         /* elevated surface */
+    --card2:#f7f6f3;        /* alternate surface */
+    --txt:#1c1a17;          /* ink (parchment-900) */
+    --sub:#6b6660;          /* muted text */
+    --line:#e7e3dc;         /* hairline border */
+    --line2:#d8d3ca;        /* stronger border */
+    --accent:#c2410c;       /* single restrained accent (warm) */
+    --accent2:#e07a3a;
+    --accent-d:#9a3412;
+    --accent-soft:rgba(194,65,12,.10);
+    --good:#15803d; --green:#15803d; --teal:#0f766e; --teal-d:#0f766e; --red:#b91c1c;
+    --amber:#b45309; --indigo:#4338ca; --pink:#be185d; --violet:#6d28d9; --blue:#1d4ed8;
+    --shadow-2xs:0 1px 2px rgba(28,26,23,.06);
+    --shadow:0 1px 3px rgba(28,26,23,.08),0 1px 2px rgba(28,26,23,.04);
+    --mono:ui-monospace,SFMono-Regular,"JetBrains Mono",Menlo,Consolas,monospace;
+    --r:14px;
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
   html,body{margin:0;padding:0;}
   body{
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
-    background:var(--bg); color:var(--txt); line-height:1.55;
+    background:var(--bg); color:var(--txt); line-height:1.6;
     -webkit-font-smoothing:antialiased;
   }
-  body::before{content:"";position:fixed;inset:0;z-index:-1;
-    background-image:repeating-linear-gradient(135deg,rgba(255,255,255,.018) 0 2px,transparent 2px 26px);pointer-events:none;}
   .app{max-width:480px;margin:0 auto;min-height:100vh;position:relative;padding-bottom:78px;
-    background:
-      radial-gradient(1100px 560px at 112% -8%, rgba(255,122,24,.12), transparent 58%),
-      radial-gradient(900px 520px at -12% 108%, rgba(56,189,248,.09), transparent 60%),
-      var(--bg);}
+    background:var(--card);border-left:1px solid var(--line);border-right:1px solid var(--line);}
   /* header */
   .topbar{position:sticky;top:0;z-index:20;
-    background:linear-gradient(180deg,#141b25 0%,#0e131b 100%);
-    color:var(--txt);padding:16px 18px 18px;padding-top:calc(16px + env(safe-area-inset-top));
-    border-bottom:1px solid var(--line);box-shadow:0 6px 22px rgba(0,0,0,.4);}
-  .topbar::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;
-    background:linear-gradient(90deg,var(--accent),#ffb020 60%,var(--accent));}
+    background:var(--card);color:var(--txt);padding:16px 18px 18px;padding-top:calc(16px + env(safe-area-inset-top));
+    border-bottom:1px solid var(--line);}
   .topbar .toprow{display:flex;align-items:center;gap:12px;}
-  .avatar{width:42px;height:42px;border-radius:13px;background:linear-gradient(135deg,#222c38,#161d27);
-    border:1px solid var(--line2);display:flex;align-items:center;justify-content:center;font-size:20px;flex:none;}
-  .topbar h1{font-size:18px;margin:0;font-weight:800;letter-spacing:.5px;}
-  .topbar .date{font-size:12px;color:var(--sub);margin-top:1px;}
-  .topbar .tip{margin-top:12px;font-size:12.5px;background:rgba(255,122,24,.12);border:1px solid rgba(255,122,24,.28);
-    color:#ffcf9e;padding:9px 12px;border-radius:12px;display:flex;gap:8px;align-items:center;}
+  .avatar{width:42px;height:42px;border-radius:13px;background:var(--card2);border:1px solid var(--line2);display:flex;align-items:center;justify-content:center;font-size:20px;flex:none;}
+  .topbar h1{font-size:18px;margin:0;font-weight:700;letter-spacing:-.01em;}
+  .topbar .date{font-size:12px;color:var(--sub);margin-top:1px;font-family:var(--mono);}
+  .topbar .tip{margin-top:12px;font-size:12.5px;background:var(--accent-soft);border:1px solid rgba(194,65,12,.2);
+    color:var(--accent-d);padding:9px 12px;border-radius:12px;display:flex;gap:8px;align-items:center;}
   /* tabs */
   .tabs{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;
-    background:rgba(12,17,24,.96);backdrop-filter:blur(12px);border-top:1px solid var(--line);
-    display:flex;z-index:30;padding-bottom:env(safe-area-inset-bottom);box-shadow:0 -4px 18px rgba(0,0,0,.5);}
-  .tab{flex:1;text-align:center;padding:7px 0 5px;font-size:10px;color:var(--sub);cursor:pointer;position:relative;transition:color .2s;}
-  .tab .ic{font-size:18px;display:block;line-height:1;margin-bottom:2px;filter:grayscale(.4) opacity(.7);transition:all .2s;}
-  .tab.active{color:var(--accent);font-weight:800;}
-  .tab.active .ic{filter:none;transform:translateY(-1px);}
-  .tab.active::before{content:"";position:absolute;top:0;left:50%;transform:translateX(-50%);width:24px;height:3px;border-radius:3px;background:var(--accent);box-shadow:0 0 10px rgba(255,122,24,.7);}
+    background:rgba(255,255,255,.92);backdrop-filter:blur(8px);border-top:1px solid var(--line);
+    display:flex;z-index:30;padding-bottom:env(safe-area-inset-bottom);}
+  .tab{flex:1;text-align:center;padding:7px 0 5px;font-size:10px;color:var(--sub);cursor:pointer;position:relative;transition:color .15s;}
+  .tab .ic{font-size:18px;display:block;line-height:1;margin-bottom:2px;transition:transform .15s;}
+  .tab.active{color:var(--accent);font-weight:700;}
+  .tab.active .ic{transform:translateY(-1px);}
+  .tab.active::before{content:"";position:absolute;top:0;left:50%;transform:translateX(-50%);width:22px;height:2px;border-radius:2px;background:var(--accent);}
   /* section */
   .section{display:none;padding:16px 14px 8px;}
-  .section.show{display:block;animation:fade .28s ease;}
-  @keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  .section.show{display:block;animation:fade .18s ease-out;}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
   /* card */
-  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px;margin-bottom:14px;box-shadow:var(--shadow-s);}
-  .card h3{margin:0 0 13px;font-size:15.5px;font-weight:800;display:flex;align-items:center;gap:8px;color:var(--txt);letter-spacing:.3px;}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px;margin-bottom:14px;box-shadow:var(--shadow-2xs);}
+  .card h3{margin:0 0 13px;font-size:15.5px;font-weight:700;display:flex;align-items:center;gap:8px;color:var(--txt);letter-spacing:-.01em;}
   .card h3 .bar{width:4px;height:16px;border-radius:3px;background:var(--accent);}
   .card h3 .sub{font-size:11.5px;color:var(--sub);font-weight:500;margin-left:auto;}
   .muted{color:var(--sub);font-size:12px;}
   /* hero today */
-  .hero{background:linear-gradient(150deg,#1b232f,#11161f);border:1px solid var(--line);
-    border-left:3px solid var(--accent);border-radius:var(--r);padding:18px;color:var(--txt);
-    box-shadow:var(--shadow);margin-bottom:14px;position:relative;overflow:hidden;}
-  .hero::after{content:"";position:absolute;right:-30px;top:-30px;width:120px;height:120px;border-radius:50%;
-    background:radial-gradient(circle,rgba(255,122,24,.18),transparent 70%);}
-  .hero .greet{font-size:18px;font-weight:800;letter-spacing:.3px;}
+  .hero{background:var(--card);border:1px solid var(--line);border-left:3px solid var(--accent);
+    border-radius:var(--r);padding:18px;color:var(--txt);box-shadow:var(--shadow-2xs);margin-bottom:14px;position:relative;overflow:hidden;}
+  .hero .greet{font-size:18px;font-weight:700;letter-spacing:-.01em;}
   .hero .gsub{font-size:12px;color:var(--sub);margin-top:3px;}
   .hero .hstat{display:flex;margin-top:16px;gap:10px;}
-  .hero .hstat div{flex:1;background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:12px;padding:10px;text-align:center;}
-  .hero .hstat b{display:block;font-size:19px;color:#fff;}
+  .hero .hstat div{flex:1;background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:10px;text-align:center;}
+  .hero .hstat b{display:block;font-size:19px;color:var(--txt);font-family:var(--mono);}
   .hero .hstat span{font-size:10.5px;color:var(--sub);}
   /* rings on today */
   .ringwrap{display:flex;align-items:center;gap:16px;}
   .ring{position:relative;width:132px;height:132px;flex:none;}
   .ring svg{transform:rotate(-90deg);}
   .ring .ctr{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
-  .ring .ctr b{font-size:24px;color:var(--txt);}
+  .ring .ctr b{font-size:24px;color:var(--txt);font-family:var(--mono);}
   .ring .ctr span{font-size:11px;color:var(--sub);}
   .ring .ctr small{font-size:10px;color:var(--sub);margin-top:2px;}
   .macrolist{flex:1;}
   .macro{margin-bottom:11px;}
   .macro .lab{display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;}
-  .macro .lab b{font-weight:700;}
+  .macro .lab b{font-weight:700;font-family:var(--mono);}
   .bar{height:9px;border-radius:6px;background:var(--line);overflow:hidden;}
   .bar i{display:block;height:100%;border-radius:6px;transition:width .5s;}
   .p i{background:var(--blue);} .c i{background:var(--amber);} .f i{background:var(--violet);}
   /* stats grid */
   .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
-  .stat{background:var(--card2);border:1px solid var(--line);border-radius:13px;padding:11px 6px;text-align:center;}
-  .stat b{display:block;font-size:18px;color:#fff;}
+  .stat{background:var(--card2);border:1px solid var(--line);border-radius:13px;padding:11px 6px;text-align:center;box-shadow:var(--shadow-2xs);}
+  .stat b{display:block;font-size:18px;color:var(--txt);font-family:var(--mono);}
   .stat span{font-size:11px;color:var(--sub);}
   .stat.pink b{color:var(--pink);} .stat.indigo b{color:var(--indigo);} .stat.amber b{color:var(--amber);}
   /* buttons */
-  .btn{display:inline-block;background:linear-gradient(135deg,var(--accent2),var(--accent));color:#1a1205;border:none;border-radius:13px;
-    padding:11px 16px;font-size:14px;font-weight:800;cursor:pointer;width:100%;box-shadow:0 5px 16px rgba(255,122,24,.32);letter-spacing:.3px;}
+  .btn{display:inline-block;background:var(--accent);color:#fff;border:none;border-radius:13px;font-family:inherit;
+    padding:11px 16px;font-size:14px;font-weight:700;cursor:pointer;width:100%;box-shadow:var(--shadow-2xs);letter-spacing:.01em;}
   .btn:active{transform:translateY(1px);}
   .btn.ghost{background:transparent;color:var(--accent);border:1px solid var(--accent);box-shadow:none;}
   .btn.sm{padding:8px 14px;font-size:13px;width:auto;border-radius:11px;}
-  .btn.danger{background:transparent;color:var(--red);border:1px solid rgba(255,84,112,.5);box-shadow:none;}
-  .btn.amber{background:linear-gradient(135deg,var(--amber),#f97316);color:#1a1205;box-shadow:0 5px 16px rgba(249,115,22,.3);}
-  .btn.indigo{background:linear-gradient(135deg,var(--indigo),var(--violet));color:#fff;box-shadow:0 5px 16px rgba(129,140,248,.3);}
-  .btn.pink{background:linear-gradient(135deg,var(--pink),#f472b6);color:#fff;box-shadow:0 5px 16px rgba(244,114,182,.3);}
+  .btn.danger{background:transparent;color:var(--red);border:1px solid rgba(185,28,28,.4);box-shadow:none;}
+  .btn.amber{background:var(--amber);color:#fff;box-shadow:var(--shadow-2xs);}
+  .btn.indigo{background:var(--indigo);color:#fff;box-shadow:var(--shadow-2xs);}
+  .btn.pink{background:var(--pink);color:#fff;box-shadow:var(--shadow-2xs);}
   /* list */
   .item{display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid var(--line);}
   .item:last-child{border-bottom:none;}
   .item .l{display:flex;align-items:center;gap:10px;min-width:0;}
-  .item .l .thumb{width:38px;height:38px;border-radius:10px;object-fit:cover;flex:none;background:var(--card2);}
+  .item .l .thumb{width:38px;height:38px;border-radius:10px;object-fit:cover;flex:none;background:var(--card2);border:1px solid var(--line);}
   .item .l .t{font-size:14px;font-weight:600;color:var(--txt);}
   .item .l .s{font-size:11px;color:var(--sub);}
   .item .r{font-size:13px;color:var(--sub);display:flex;align-items:center;gap:10px;flex:none;}
   .del{color:var(--red);font-size:17px;cursor:pointer;padding:0 4px;}
-  .item.editing{background:rgba(56,189,248,.08);border-radius:10px;padding-left:8px;padding-right:8px;margin:0 -8px;}
+  .item.editing{background:var(--accent-soft);border-radius:10px;padding-left:8px;padding-right:8px;margin:0 -8px;}
   .ph .del{margin-left:10px;font-size:15px;}
   /* form */
   label.fld{display:block;margin-bottom:13px;}
   label.fld .lab{font-size:13px;color:var(--sub);margin-bottom:6px;display:block;font-weight:600;}
-  input,select{width:100%;padding:12px 13px;border:1.5px solid var(--line2);border-radius:12px;
+  input,select{width:100%;padding:12px 13px;border:1px solid var(--line2);border-radius:12px;font-family:inherit;
     font-size:15px;background:var(--bg2);color:var(--txt);-webkit-appearance:none;}
-  input::placeholder,select::placeholder{color:#5b6776;}
-  input:focus,select:focus{outline:none;border-color:var(--accent);}
-  textarea{width:100%;padding:12px 13px;border:1.5px solid var(--line2);border-radius:12px;font-size:14px;font-family:inherit;resize:vertical;background:var(--bg2);color:var(--txt);}
+  input::placeholder,select::placeholder{color:#9a948b;}
+  input:focus,select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft);}
+  textarea{width:100%;padding:12px 13px;border:1px solid var(--line2);border-radius:12px;font-size:14px;font-family:inherit;resize:vertical;background:var(--bg2);color:var(--txt);}
   .row{display:flex;gap:10px;} .row > *{flex:1;}
   .addrow{display:flex;gap:8px;align-items:center;margin:10px 0 4px;}
   .addrow input{flex:1;margin-bottom:0;}
@@ -134,50 +133,50 @@
   .cuslist{background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:4px 10px;margin:6px 0 2px;}
   .cuslist .item{padding:8px 0;}
   .smitem .t{font-weight:500 !important;}
-  .chips span.add{background:linear-gradient(135deg,var(--amber),#f97316);color:#1a1205;border:none;font-weight:800;}
-  .pillcus{background:rgba(255,176,32,.15);color:var(--amber);}
+  .chips span.add{background:var(--accent);color:#fff;border:none;font-weight:700;}
+  .pillcus{background:var(--accent-soft);color:var(--accent-d);}
   .seg{display:flex;gap:8px;}
-  .seg button{flex:1;padding:11px;border:1.5px solid var(--line2);background:var(--bg2);border-radius:12px;font-size:13px;color:var(--sub);cursor:pointer;font-weight:600;}
-  .seg button.on{background:linear-gradient(135deg,var(--accent2),var(--accent));color:#1a1205;border-color:transparent;}
+  .seg button{flex:1;padding:11px;border:1px solid var(--line2);background:var(--bg2);border-radius:12px;font-size:13px;color:var(--sub);cursor:pointer;font-weight:600;font-family:inherit;}
+  .seg button.on{background:var(--accent);color:#fff;border-color:transparent;}
   .mealtabs{display:flex;gap:6px;margin-bottom:13px;}
-  .mealtabs button{flex:1;padding:9px 0;font-size:13px;border:none;background:var(--card2);color:var(--sub);border-radius:11px;cursor:pointer;font-weight:600;border:1px solid var(--line);}
-  .mealtabs button.on{background:linear-gradient(135deg,var(--accent2),var(--accent));color:#1a1205;border-color:transparent;}
+  .mealtabs button{flex:1;padding:9px 0;font-size:13px;border:none;background:var(--card2);color:var(--sub);border-radius:11px;cursor:pointer;font-weight:600;border:1px solid var(--line);font-family:inherit;}
+  .mealtabs button.on{background:var(--accent);color:#fff;border-color:transparent;}
   /* modal */
-  .mask{position:fixed;inset:0;background:rgba(5,8,12,.7);z-index:50;display:none;align-items:flex-end;justify-content:center;}
+  .mask{position:fixed;inset:0;background:rgba(28,26,23,.4);z-index:50;display:none;align-items:flex-end;justify-content:center;}
   .mask.show{display:flex;}
-  .sheet{background:var(--card);width:100%;max-width:480px;border-radius:22px 22px 0 0;padding:20px 18px;border-top:2px solid var(--accent);
-    max-height:88vh;overflow:auto;padding-bottom:calc(20px + env(safe-area-inset-bottom));box-shadow:0 -10px 40px rgba(0,0,0,.5);}
-  .sheet h4{margin:0 0 16px;font-size:17px;font-weight:800;display:flex;align-items:center;gap:8px;color:var(--txt);}
+  .sheet{background:var(--card);width:100%;max-width:480px;border-radius:22px 22px 0 0;padding:20px 18px;border-top:1px solid var(--line);
+    max-height:88vh;overflow:auto;padding-bottom:calc(20px + env(safe-area-inset-bottom));box-shadow:0 -4px 24px rgba(28,26,23,.12);}
+  .sheet h4{margin:0 0 16px;font-size:17px;font-weight:700;display:flex;align-items:center;gap:8px;color:var(--txt);letter-spacing:-.01em;}
   .close{float:right;font-size:24px;color:var(--sub);cursor:pointer;line-height:1;margin-top:-4px;}
   .chips{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 14px;}
   .chips span{padding:8px 12px;background:var(--card2);border:1px solid var(--line);border-radius:20px;font-size:12.5px;cursor:pointer;font-weight:600;color:var(--sub);}
-  .chips span.on{background:var(--accent);color:#1a1205;border-color:transparent;}
+  .chips span.on{background:var(--accent);color:#fff;border-color:transparent;}
   /* 今日饮水 */
   .waterwrap{display:flex;align-items:center;gap:14px;margin:6px 0 12px;}
   .waterbig{flex:0 0 auto;display:flex;align-items:baseline;gap:4px;}
-  .waterbig b{font-size:30px;font-weight:800;color:var(--teal);line-height:1;}
+  .waterbig b{font-size:30px;font-weight:700;color:var(--teal);line-height:1;font-family:var(--mono);}
   .waterbig span{font-size:13px;color:var(--sub);}
   .waterbar{flex:1;height:10px;border-radius:6px;background:var(--card2);overflow:hidden;border:1px solid var(--line);}
-  .waterbar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#38bdf8,#22d3ee);transition:width .35s ease;}
+  .waterbar i{display:block;height:100%;width:0;background:var(--teal);transition:width .35s ease;}
   .waterbtns{display:flex;gap:8px;margin-bottom:10px;}
-  .wbtn{flex:1;padding:10px 0;border:none;border-radius:11px;background:rgba(56,189,248,.14);color:#7dd3fc;font-weight:700;font-size:13.5px;cursor:pointer;}
+  .wbtn{flex:1;padding:10px 0;border:none;border-radius:11px;background:rgba(15,118,110,.1);color:var(--teal);font-weight:700;font-size:13.5px;cursor:pointer;font-family:inherit;}
   .wbtn.ghost{background:transparent;border:1px solid var(--line2);color:var(--sub);}
   .wbtn:active{transform:scale(.97);}
   .watercustom{display:flex;gap:8px;align-items:center;}
   .watercustom input{flex:1;margin-bottom:0;}
   .watermeta{margin-top:10px;font-size:12px;color:var(--sub);}
   /* 自定义动作懒加载 */
-  .cusToggle{display:inline-flex;align-items:center;gap:4px;padding:7px 12px;margin:4px 0;border:1px dashed var(--line2);border-radius:20px;font-size:12.5px;cursor:pointer;font-weight:700;color:var(--amber);background:rgba(255,176,32,.08);}
+  .cusToggle{display:inline-flex;align-items:center;gap:4px;padding:7px 12px;margin:4px 0;border:1px dashed var(--line2);border-radius:20px;font-size:12.5px;cursor:pointer;font-weight:700;color:var(--amber);background:rgba(180,83,9,.08);}
   .cusChips{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 10px;}
   .cusHead{display:flex;align-items:center;justify-content:space-between;padding:9px 4px;font-size:13px;font-weight:700;color:var(--amber);cursor:pointer;}
   .cusHead span{font-size:12px;color:var(--sub);}
   .cuslist .cusHead{border-bottom:1px solid var(--line);margin-bottom:4px;}
-  .advice li{margin-bottom:11px;font-size:13px;line-height:1.65;list-style:none;position:relative;padding-left:26px;color:#cbd5e1;}
+  .advice li{margin-bottom:11px;font-size:13px;line-height:1.65;list-style:none;position:relative;padding-left:26px;color:var(--txt);}
   .advice li:before{position:absolute;left:0;top:0;font-size:14px;}
   .advice li.warn:before{content:"⚠️";} .advice li.good:before{content:"✅";} .advice li.info:before{content:"💡";}
-  .advice li.warn{color:#ffb38a;} .advice li.good{color:#7fe9c4;}
-  .tag{display:inline-block;font-size:11px;padding:2px 9px;border-radius:9px;background:rgba(255,122,24,.15);color:#ff9d4d;margin-left:6px;font-weight:700;}
-  .banner{background:rgba(255,176,32,.1);border:1px solid rgba(255,176,32,.3);color:#ffcf8a;border-radius:12px;padding:11px 13px;font-size:13px;margin-bottom:14px;line-height:1.6;}
+  .advice li.warn{color:var(--amber);} .advice li.good{color:var(--good);}
+  .tag{display:inline-block;font-size:11px;padding:2px 9px;border-radius:9px;background:var(--accent-soft);color:var(--accent-d);margin-left:6px;font-weight:700;}
+  .banner{background:var(--accent-soft);border:1px solid rgba(194,65,12,.25);color:var(--accent-d);border-radius:12px;padding:11px 13px;font-size:13px;margin-bottom:14px;line-height:1.6;}
   .empty{text-align:center;color:var(--sub);font-size:13px;padding:26px 0;}
   .navbtns{display:flex;gap:10px;margin-top:4px;flex-wrap:wrap;}
   .small{font-size:12px;}
@@ -185,21 +184,21 @@
   .kv{width:100%;font-size:13px;border-collapse:collapse;}
   .kv td{padding:8px 0;border-bottom:1px solid var(--line);}
   .kv tr:last-child td{border-bottom:none;}
-  .kv td:last-child{text-align:right;font-weight:700;color:var(--txt);}
+  .kv td:last-child{text-align:right;font-weight:700;color:var(--txt);font-family:var(--mono);}
   .chartcard svg{width:100%;height:auto;display:block;}
-  .toast{position:fixed;bottom:92px;left:50%;transform:translateX(-50%);background:#0b0f15;color:#fff;border:1px solid var(--line2);padding:11px 20px;border-radius:22px;font-size:13px;z-index:99;opacity:0;transition:opacity .3s;pointer-events:none;box-shadow:0 8px 24px rgba(0,0,0,.5);}
+  .toast{position:fixed;bottom:92px;left:50%;transform:translateX(-50%);background:var(--txt);color:#fff;border:1px solid rgba(0,0,0,.1);padding:11px 20px;border-radius:22px;font-size:13px;z-index:99;opacity:0;transition:opacity .3s;pointer-events:none;box-shadow:var(--shadow);}
   .toast.show{opacity:1;}
   /* progress */
   .progress{height:10px;border-radius:8px;background:var(--line);overflow:hidden;margin:10px 0 4px;}
-  .progress i{display:block;height:100%;border-radius:8px;background:linear-gradient(90deg,var(--accent2),var(--accent));transition:width .6s;}
+  .progress i{display:block;height:100%;border-radius:8px;background:var(--accent);transition:width .6s;}
   /* exam */
   .examrow{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--line);}
   .examrow:last-child{border-bottom:none;}
   .examrow .ename{flex:1;font-size:13.5px;font-weight:600;color:var(--txt);}
   .examrow .ename small{display:block;color:var(--sub);font-weight:400;font-size:11px;}
-  .examrow .eval{font-weight:800;font-size:14px;color:#fff;}
+  .examrow .eval{font-weight:800;font-size:14px;color:var(--txt);font-family:var(--mono);}
   .badge{font-size:10.5px;padding:3px 9px;border-radius:9px;font-weight:700;margin-left:8px;}
-  .badge.n{background:rgba(52,211,153,.16);color:#5eead4;} .badge.h{background:rgba(255,84,112,.18);color:#ff8ba0;} .badge.l{background:rgba(56,189,248,.16);color:#7dd3fc;}
+  .badge.n{background:rgba(21,128,61,.14);color:#15803d;} .badge.h{background:rgba(185,28,28,.12);color:#b91c1c;} .badge.l{background:rgba(15,118,110,.14);color:#0f766e;}
   /* supplement */
   .supp{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--line);}
   .supp:last-child{border-bottom:none;}
@@ -209,11 +208,11 @@
   .supp .info .d{font-size:11.5px;color:var(--sub);}
   .toggle{width:50px;height:28px;border-radius:16px;background:var(--line2);position:relative;cursor:pointer;flex:none;transition:background .25s;}
   .toggle.on{background:var(--accent);}
-  .toggle::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:left .25s;box-shadow:0 1px 3px rgba(0,0,0,.3);}
+  .toggle::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:left .25s;box-shadow:0 1px 2px rgba(0,0,0,.2);}
   .toggle.on::after{left:25px;}
   /* today mini cards */
   .minicard{display:flex;align-items:center;gap:12px;padding:13px;border-radius:14px;background:var(--card2);border:1px solid var(--line);margin-bottom:10px;}
-  .minicard .mi{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;flex:none;background:rgba(255,122,24,.12);}
+  .minicard .mi{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;flex:none;background:var(--accent-soft);}
   .minicard .mt{flex:1;min-width:0;}
   .minicard .mt .h{font-size:13.5px;font-weight:700;color:var(--txt);}
   .minicard .mt .d{font-size:11.5px;color:var(--sub);}
@@ -222,47 +221,48 @@
   .plan .ph{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
   .plan .ph b{font-size:14.5px;color:var(--txt);}
   .plan .parts{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;}
-  .plan .parts span{font-size:11px;background:rgba(56,189,248,.14);color:#7dd3fc;padding:2px 9px;border-radius:8px;font-weight:600;}
+  .plan .parts span{font-size:11px;background:rgba(15,118,110,.12);color:var(--teal);padding:2px 9px;border-radius:8px;font-weight:600;}
   .plan .exmini{font-size:12px;color:var(--sub);}
   .partsel{display:flex;flex-wrap:wrap;gap:7px;margin:8px 0 12px;}
   .partsel span{padding:7px 13px;background:var(--card2);border:1px solid var(--line);border-radius:11px;font-size:12.5px;cursor:pointer;font-weight:600;color:var(--sub);}
-  .partsel span.on{background:var(--accent);color:#1a1205;border-color:transparent;}
+  .partsel span.on{background:var(--accent);color:#fff;border-color:transparent;}
   /* training overlay */
-  .overlay{position:fixed;inset:0;background:#080b10;z-index:80;display:none;flex-direction:column;color:#e2e8f0;}
+  .overlay{position:fixed;inset:0;background:var(--card);z-index:80;display:none;flex-direction:column;color:var(--txt);}
   .overlay.show{display:flex;}
-  .ovhead{padding:16px 18px;display:flex;align-items:center;gap:12px;background:#11161f;border-bottom:1px solid var(--line);}
-  .ovhead .t{font-size:16px;font-weight:800;color:#fff;flex:1;}
-  .ovhead .time{font-size:13px;color:#94a3b8;font-variant-numeric:tabular-nums;}
-  .ovbody{flex:1;overflow:auto;padding:16px 14px;}
-  .restcard{background:#13201d;border:1px solid #1f6b5a;border-radius:16px;padding:14px;margin-bottom:16px;display:flex;align-items:center;gap:14px;}
+  .ovhead{padding:16px 18px;display:flex;align-items:center;gap:12px;background:var(--card);border-bottom:1px solid var(--line);}
+  .ovhead .t{font-size:16px;font-weight:700;color:var(--txt);flex:1;letter-spacing:-.01em;}
+  .ovhead .time{font-size:13px;color:var(--sub);font-variant-numeric:tabular-nums;font-family:var(--mono);}
+  .ovbody{flex:1;overflow:auto;padding:16px 14px;background:var(--bg);}
+  .restcard{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:16px;display:flex;align-items:center;gap:14px;box-shadow:var(--shadow-2xs);}
   .restcard .rr{position:relative;width:74px;height:74px;flex:none;}
   .restcard .rr svg{transform:rotate(-90deg);}
-  .restcard .rr .rc{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;color:#5eead4;}
+  .restcard .rr .rc{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;color:var(--teal);font-family:var(--mono);}
   .restcard .rt{flex:1;}
-  .restcard .rt b{color:#5eead4;font-size:14px;}
-  .restcard .rt div{font-size:12px;color:#94a3b8;margin-top:3px;}
-  .tex{background:#11161f;border-radius:14px;padding:13px;margin-bottom:12px;border:1px solid var(--line2);}
-  .tex.active{border-color:var(--accent);box-shadow:0 0 0 1px rgba(255,122,24,.4);}
+  .restcard .rt b{color:var(--teal);font-size:14px;}
+  .restcard .rt div{font-size:12px;color:var(--sub);margin-top:3px;}
+  .tex{background:var(--card);border-radius:14px;padding:13px;margin-bottom:12px;border:1px solid var(--line2);box-shadow:var(--shadow-2xs);}
+  .tex.active{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent);}
   .tex.done{opacity:.6;}
   .texh{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
-  .texh b{font-size:15px;color:#fff;}
-  .texpart{font-size:11px;background:rgba(129,140,248,.18);color:#c7d2fe;padding:2px 9px;border-radius:8px;font-weight:700;}
-  .texok{margin-left:auto;color:#34d399;font-weight:800;}
-  .tset{display:flex;align-items:center;gap:10px;padding:9px 0;border-top:1px solid var(--line2);}
-  .tset .sn{width:26px;height:26px;border-radius:8px;background:var(--line2);color:#e2e8f0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex:none;}
-  .tset.scur .sn{background:var(--accent);color:#1a1205;}
-  .tset.sdone .sn{background:#064e3b;color:#34d399;}
-  .tset .sin{display:flex;align-items:center;gap:4px;font-size:13px;color:#cbd5e1;}
-  .tset input{width:62px;padding:7px 8px;border-radius:9px;border:1px solid var(--line2);background:#0b0f15;color:#fff;font-size:14px;text-align:center;}
-  .tset.sdone .sv{color:#34d399;font-weight:700;font-size:14px;}
-  .tset.sdone .sdoneb{margin-left:auto;color:#34d399;font-size:12px;font-weight:700;}
+  .texh b{font-size:15px;color:var(--txt);}
+  .texpart{font-size:11px;background:rgba(67,56,202,.12);color:var(--indigo);padding:2px 9px;border-radius:8px;font-weight:700;}
+  .texok{margin-left:auto;color:var(--good);font-weight:800;}
+  .teximg{width:44px;height:44px;border-radius:11px;object-fit:cover;flex:none;border:1px solid var(--line);background:var(--bg2);}
+  .tset{display:flex;align-items:center;gap:10px;padding:9px 0;border-top:1px solid var(--line);}
+  .tset .sn{width:26px;height:26px;border-radius:8px;background:var(--card2);color:var(--txt);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex:none;}
+  .tset.scur .sn{background:var(--accent);color:#fff;}
+  .tset.sdone .sn{background:rgba(21,128,61,.16);color:var(--good);}
+  .tset .sin{display:flex;align-items:center;gap:4px;font-size:13px;color:var(--txt);}
+  .tset input{width:62px;padding:7px 8px;border-radius:9px;border:1px solid var(--line2);background:var(--bg2);color:var(--txt);font-size:14px;text-align:center;font-family:var(--mono);}
+  .tset.sdone .sv{color:var(--good);font-weight:700;font-size:14px;}
+  .tset.sdone .sdoneb{margin-left:auto;color:var(--good);font-size:12px;font-weight:700;}
   .donebtn{margin-left:auto;}
-  .cfphoto{display:inline-flex;align-items:center;justify-content:center;min-width:120px;padding:12px 14px;border-radius:12px;border:1.5px dashed var(--line2);background:var(--card2);color:#ff9d2f;font-weight:700;cursor:pointer;font-size:14px;}
+  .cfphoto{display:inline-flex;align-items:center;justify-content:center;min-width:120px;padding:12px 14px;border-radius:12px;border:1.5px dashed var(--line2);background:var(--card2);color:var(--accent);font-weight:700;cursor:pointer;font-size:14px;}
   .cfphoto img{width:100%;max-height:160px;border-radius:8px;object-fit:cover;}
   .texfoot{display:flex;gap:10px;margin-top:10px;padding-top:10px;border-top:1px dashed var(--line2);}
-  .sdel{margin-left:auto;width:24px;height:24px;border-radius:7px;background:#3a2230;color:#ff8095;display:flex;align-items:center;justify-content:center;font-weight:800;cursor:pointer;flex:none;}
+  .sdel{margin-left:auto;width:24px;height:24px;border-radius:7px;background:rgba(185,28,28,.1);color:var(--red);display:flex;align-items:center;justify-content:center;font-weight:800;cursor:pointer;flex:none;}
   .sdel:active{transform:scale(.92);}
-  .ovfoot{padding:14px 18px;background:#11161f;border-top:1px solid var(--line);display:flex;gap:10px;}
+  .ovfoot{padding:14px 18px;background:var(--card);border-top:1px solid var(--line);display:flex;gap:10px;}
   .ovfoot .btn{box-shadow:none;}
   /* photo upload */
   .photobox{display:flex;align-items:center;gap:12px;margin-bottom:13px;}
@@ -270,28 +270,26 @@
   .photobox .pv img{width:100%;height:100%;object-fit:cover;}
   /* section quick add */
   .qrow{display:flex;gap:10px;margin-bottom:14px;}
-  .qrow .qcard{flex:1;background:linear-gradient(150deg,#1b232f,#121821);border:1px solid var(--line);border-top:2px solid var(--accent);
-    border-radius:14px;padding:12px;text-align:center;cursor:pointer;transition:transform .1s,border-color .2s;}
+  .qrow .qcard{flex:1;background:var(--card);border:1px solid var(--line);border-top:2px solid var(--accent);
+    border-radius:14px;padding:12px;text-align:center;cursor:pointer;transition:transform .1s,border-color .15s;box-shadow:var(--shadow-2xs);}
   .qrow .qcard:active{transform:scale(.98);}
   .qrow .qcard .qi{font-size:22px;}
-  .qrow .qcard .qt{font-size:12px;font-weight:700;color:#ffcf9e;margin-top:4px;}
+  .qrow .qcard .qt{font-size:12px;font-weight:700;color:var(--accent-d);margin-top:4px;}
   /* ======= 资讯模块 ======= */
-  .news-hero{position:relative;background:linear-gradient(150deg,#1c2533,#11161f);border:1px solid var(--line);
-    border-left:3px solid var(--accent);border-radius:16px;padding:16px;margin-bottom:14px;overflow:hidden;cursor:pointer;}
-  .news-hero::after{content:"";position:absolute;right:-26px;top:-26px;width:110px;height:110px;border-radius:50%;
-    background:radial-gradient(circle,rgba(255,122,24,.16),transparent 70%);}
+  .news-hero{position:relative;background:var(--card);border:1px solid var(--line);
+    border-left:3px solid var(--accent);border-radius:16px;padding:16px;margin-bottom:14px;overflow:hidden;cursor:pointer;box-shadow:var(--shadow-2xs);}
   .news-hero .nh-label{font-size:11px;color:var(--accent);font-weight:800;letter-spacing:1px;text-transform:uppercase;}
-  .news-hero h2{font-size:18px;font-weight:800;margin:7px 0 8px;line-height:1.35;color:#fff;padding-right:70px;}
+  .news-hero h2{font-size:18px;font-weight:700;margin:7px 0 8px;line-height:1.35;color:var(--txt);padding-right:70px;letter-spacing:-.01em;}
   .news-hero .nsum{font-size:13px;color:var(--sub);line-height:1.6;}
   .news-hero .nmeta{margin-top:10px;font-size:11.5px;color:var(--sub);display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
-  .news-hero .refresh{position:absolute;top:14px;right:14px;font-size:11.5px;color:var(--accent);background:rgba(255,122,24,.12);
-    border:1px solid rgba(255,122,24,.3);padding:5px 11px;border-radius:20px;cursor:pointer;font-weight:800;z-index:2;}
+  .news-hero .refresh{position:absolute;top:14px;right:14px;font-size:11.5px;color:var(--accent);background:var(--accent-soft);
+    border:1px solid rgba(194,65,12,.25);padding:5px 11px;border-radius:20px;cursor:pointer;font-weight:700;z-index:2;}
   .catbar{display:flex;gap:8px;overflow-x:auto;padding:2px 0 12px;margin-bottom:2px;-webkit-overflow-scrolling:touch;}
   .catbar::-webkit-scrollbar{display:none;}
   .catbar .cat{padding:7px 14px;background:var(--card2);border:1px solid var(--line);border-radius:20px;font-size:12.5px;color:var(--sub);white-space:nowrap;cursor:pointer;font-weight:600;}
-  .catbar .cat.on{background:var(--accent);border-color:var(--accent);color:#1a1205;}
+  .catbar .cat.on{background:var(--accent);border-color:var(--accent);color:#fff;}
   .newslist{display:flex;flex-direction:column;gap:12px;}
-  .newsitem{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;cursor:pointer;transition:border-color .2s,transform .08s;}
+  .newsitem{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;cursor:pointer;transition:border-color .15s,transform .08s;box-shadow:var(--shadow-2xs);}
   .newsitem:active{transform:scale(.99);}
   .newsitem:hover{border-color:var(--accent);}
   .newsitem .ncat{display:inline-block;font-size:11px;padding:2px 9px;border-radius:8px;font-weight:800;margin-bottom:8px;}
@@ -299,42 +297,48 @@
   .newsitem .nsum{font-size:12.5px;color:var(--sub);margin-top:6px;line-height:1.6;}
   .newsitem .nmeta{margin-top:10px;font-size:11.5px;color:var(--sub);display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
   .srcnote{font-size:11px;color:var(--sub);text-align:center;margin:18px 0 4px;line-height:1.7;}
-  .nbody{font-size:14px;color:#cbd5e1;line-height:1.85;margin-top:12px;}
+  .nbody{font-size:14px;color:var(--txt);line-height:1.85;margin-top:12px;}
   .nbody p{margin:0 0 12px;}
   .srcline{font-size:11.5px;color:var(--sub);margin-top:12px;border-top:1px solid var(--line);padding-top:10px;}
   /* 资讯分类标签配色 */
-  .t-fit{background:rgba(255,122,24,.16);color:#ff9d4d;}
-  .t-fat{background:rgba(255,84,112,.16);color:#ff8ba0;}
-  .t-nut{background:rgba(52,211,153,.16);color:#5eead4;}
-  .t-train{background:rgba(56,189,248,.16);color:#7dd3fc;}
-  .t-rec{background:rgba(176,123,255,.16);color:#c4a8ff;}
-  .t-sup{background:rgba(255,176,32,.16);color:#ffc861;}
+  .t-fit{background:rgba(194,65,12,.12);color:var(--accent-d);}
+  .t-fat{background:rgba(185,28,28,.12);color:#b91c1c;}
+  .t-nut{background:rgba(21,128,61,.12);color:#15803d;}
+  .t-train{background:rgba(15,118,110,.12);color:#0f766e;}
+  .t-rec{background:rgba(109,40,217,.12);color:#6d28d9;}
+  .t-sup{background:rgba(180,83,9,.12);color:#b45309;}
 
 /* ===== 动作库（exercises-dataset） ===== */
-.libbar{position:sticky;top:0;z-index:5;background:var(--bg);padding:4px 0 8px;}
+.libbar{position:sticky;top:0;z-index:5;background:var(--card);padding:4px 0 8px;}
 .libsearch{display:flex;gap:8px;margin-bottom:8px;}
-.libsearch input{flex:1;background:var(--bg2);border:1px solid var(--line);color:var(--txt);border-radius:12px;padding:10px 12px;font-size:15px;}
+.libsearch input{flex:1;background:var(--bg2);border:1px solid var(--line2);color:var(--txt);border-radius:12px;padding:10px 12px;font-size:15px;}
 .libfilters{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:2px;}
 .libfilters .flab{width:100%;color:var(--sub);font-size:12px;margin:6px 0 0;}
 .chip2{padding:5px 10px;border:1px solid var(--line);border-radius:999px;background:var(--card);color:var(--sub);font-size:12.5px;cursor:pointer;}
-.chip2.on{background:var(--accent);border-color:transparent;color:#1a1205;font-weight:600;}
+.chip2.on{background:var(--accent);border-color:transparent;color:#fff;font-weight:600;}
 .libgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:6px;}
-.libcard{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;cursor:pointer;border-left:3px solid var(--accent);}
-.libcard img{width:100%;height:118px;object-fit:cover;background:#0c1118;display:block;}
+.libcard{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;cursor:pointer;border-left:3px solid var(--accent);box-shadow:var(--shadow-2xs);}
+.libcard img{width:100%;height:118px;object-fit:cover;background:var(--card2);display:block;}
 .libcard .lc-body{padding:8px 9px;}
 .libcard .lc-name{font-size:13.5px;font-weight:600;line-height:1.25;color:var(--txt);}
 .libcard .lc-meta{font-size:11.5px;color:var(--sub);margin-top:3px;}
 .libmore{margin:14px auto;display:block;}
 .libempty{padding:30px 10px;text-align:center;color:var(--sub);font-size:14px;line-height:1.6;}
-.libdetail .lgif{width:100%;border-radius:12px;background:#0c1118;margin:6px 0 10px;max-height:260px;object-fit:contain;}
+.libdetail .lgif{width:100%;border-radius:12px;background:var(--card2);margin:6px 0 10px;max-height:260px;object-fit:contain;}
 .libdetail .lname{font-size:17px;font-weight:700;line-height:1.3;color:var(--txt);}
 .libdetail .lmeta{color:var(--sub);font-size:13px;margin:4px 0 8px;}
 .libdetail .lins{font-size:14px;line-height:1.75;color:var(--txt);white-space:pre-wrap;}
-.libdetail .lattr{font-size:11px;color:#6b7787;margin-top:10px;line-height:1.5;}
+.libdetail .lattr{font-size:11px;color:#9a948b;margin-top:10px;line-height:1.5;}
 .libdetail .lbtn{margin-top:14px;width:100%;}
 .libadd .row{margin:9px 0;}
-.libadd select,.libadd input{width:100%;background:var(--bg2);border:1px solid var(--line);color:var(--txt);border-radius:10px;padding:9px 10px;font-size:14px;}
+.libadd select,.libadd input{width:100%;background:var(--bg2);border:1px solid var(--line2);color:var(--txt);border-radius:10px;padding:9px 10px;font-size:14px;}
 .libadd .row.flex{display:flex;gap:8px;}
+
+@media (prefers-reduced-motion:reduce){
+  .section.show{animation:none;}
+  .btn:active,.wbtn:active,.sdel:active,.qrow .qcard:active{transform:none;}
+  .tab,.tab .ic,.card,.newsitem{transition:none;}
+}
 </style>
 </head>
 <body>
@@ -369,7 +373,7 @@
       <div class="ringwrap">
         <div class="ring">
           <svg width="132" height="132" viewBox="0 0 132 132">
-            <circle cx="66" cy="66" r="58" fill="none" stroke="#eef1f5" stroke-width="13"/>
+            <circle cx="66" cy="66" r="58" fill="none" stroke="#e7e3dc" stroke-width="13"/>
             <circle id="ringArc" cx="66" cy="66" r="58" fill="none" stroke="#10b981" stroke-width="13"
               stroke-linecap="round" stroke-dasharray="364.42" stroke-dashoffset="364.42"/>
           </svg>
@@ -506,18 +510,7 @@
   </section>
 
   <!-- 身体 -->
-  <section class="section" id="sec-lib">
-  <div class="libbar">
-    <div class="libsearch"><input id="libSearch" type="text" placeholder="搜索动作，如 卧推 / squat" oninput="renderExLib()" /></div>
-    <div class="libfilters" id="libParts"></div>
-    <div class="libfilters" id="libEquip"></div>
-  </div>
-  <div class="libgrid" id="libGrid"></div>
-  <div class="libempty" id="libEmpty" style="display:none"></div>
-  <button class="btn ghost libmore" id="libMore" style="display:none" onclick="libLoadMore()">加载更多</button>
-</section>
-
-<section class="section" id="sec-body">
+  <section class="section" id="sec-body">
     <div class="card">
       <h3><span class="bar" style="background:var(--pink)"></span>录入身体数据</h3>
       <div class="row">
@@ -658,7 +651,6 @@
     <div class="tab active" data-t="today" onclick="goTab('today')"><span class="ic">🏠</span>今日</div>
     <div class="tab" data-t="diet" onclick="goTab('diet')"><span class="ic">🍱</span>饮食</div>
     <div class="tab" data-t="exercise" onclick="goTab('exercise')"><span class="ic">🏋️</span>运动</div>
-    <div class="tab" data-t="lib" onclick="goTab('lib')"><span class="ic">📚</span>动作库</div>
     <div class="tab" data-t="body" onclick="goTab('body')"><span class="ic">⚖️</span>身体</div>
     <div class="tab" data-t="supplements" onclick="goTab('supplements')"><span class="ic">💊</span>补剂</div>
     <div class="tab" data-t="news" onclick="goTab('news')"><span class="ic">📰</span>资讯</div>
@@ -760,24 +752,39 @@
     <h4>📋 训练计划</h4>
     <label class="fld"><span class="lab">计划名称</span><input type="text" id="planName" placeholder="如 推日 / 胸肩三头" /></label>
     <div id="planEditList"></div>
-    <div class="plan" style="background:#f8fafc">
-      <h4 style="font-size:14px;margin:0 0 4px">+ 添加动作</h4>
-      <div class="partsel" id="exPartSel"></div>
-      <div class="addrow"><input id="newPartInput" placeholder="自定义部位，如 臀 / 前臂"/><button class="btn sm ghost" onclick="addCustomPart()">+ 部位</button></div>
-      <div id="customPartList" class="cuslist"></div>
-      <div class="chips" id="exNameSel" style="max-height:120px;overflow:auto"></div>
-      <div class="addrow"><input id="newExInput" placeholder="自定义动作名称"/><button class="btn sm ghost" onclick="addCustomEx()">+ 动作</button></div>
-      <div id="customExList" class="cuslist"></div>
-      <div class="row">
-        <label class="fld"><span class="lab">组数</span><input type="number" id="exSets" value="3" /></label>
-        <label class="fld"><span class="lab">重量 kg</span><input type="number" id="exWeight" value="20" /></label>
+    <div class="seg" id="planAddSeg" style="margin:12px 0">
+      <button class="on" data-m="lib" onclick="switchPlanAdd('lib')">📚 从动作库选</button>
+      <button data-m="manual" onclick="switchPlanAdd('manual')">✏️ 手动 / 自定义</button>
+    </div>
+    <div id="planAddLib">
+      <div class="libsearch"><input id="libSearch" type="text" placeholder="搜索动作，如 卧推 / squat" oninput="renderExLib()" /></div>
+      <div class="libfilters" id="libParts"></div>
+      <div class="libfilters" id="libEquip"></div>
+      <div class="libgrid" id="libGrid"></div>
+      <div class="libempty" id="libEmpty" style="display:none"></div>
+      <button class="btn ghost libmore" id="libMore" style="display:none" onclick="libLoadMore()">加载更多</button>
+      <p class="muted small" style="margin:8px 2px">点动作卡片可看示范图与中文要领；详情页「加入本计划」即可选入。动作库含 1300+ 动作，首次需联网加载（之后离线可用）。</p>
+    </div>
+    <div id="planAddManual" style="display:none">
+      <div class="plan" style="background:var(--bg2)">
+        <h4 style="font-size:14px;margin:0 0 4px">+ 手动添加动作</h4>
+        <div class="partsel" id="exPartSel"></div>
+        <div class="addrow"><input id="newPartInput" placeholder="自定义部位，如 臀 / 前臂"/><button class="btn sm ghost" onclick="addCustomPart()">+ 部位</button></div>
+        <div id="customPartList" class="cuslist"></div>
+        <div class="chips" id="exNameSel" style="max-height:120px;overflow:auto"></div>
+        <div class="addrow"><input id="newExInput" placeholder="自定义动作名称"/><button class="btn sm ghost" onclick="addCustomEx()">+ 动作</button></div>
+        <div id="customExList" class="cuslist"></div>
+        <div class="row">
+          <label class="fld"><span class="lab">组数</span><input type="number" id="exSets" value="3" /></label>
+          <label class="fld"><span class="lab">重量 kg</span><input type="number" id="exWeight" value="20" /></label>
+        </div>
+        <div class="row">
+          <label class="fld"><span class="lab">次数</span><input type="number" id="exReps" value="12" /></label>
+          <label class="fld"><span class="lab">组间休息 秒</span><input type="number" id="exRest" value="60" /></label>
+        </div>
+        <button class="btn ghost sm" id="addExBtn" onclick="addExToPlan()">添加动作到计划</button>
+        <button class="btn ghost sm" id="cancelExBtn" style="display:none" onclick="resetExForm()">取消修改</button>
       </div>
-      <div class="row">
-        <label class="fld"><span class="lab">次数</span><input type="number" id="exReps" value="12" /></label>
-        <label class="fld"><span class="lab">组间休息 秒</span><input type="number" id="exRest" value="60" /></label>
-      </div>
-      <button class="btn ghost sm" id="addExBtn" onclick="addExToPlan()">添加动作到计划</button>
-      <button class="btn ghost sm" id="cancelExBtn" style="display:none" onclick="resetExForm()">取消修改</button>
     </div>
     <div class="navbtns" style="margin-top:12px">
       <button class="btn" onclick="savePlan2()">保存计划</button>
@@ -790,12 +797,12 @@
   <div class="ovhead">
     <div class="t" id="trainTitle">训练中</div>
     <div class="time" id="trainTime">00:00</div>
-    <button class="btn ghost sm" style="margin-left:8px;border:none;background:#263241;color:#ff9d2f" onclick="openTrainAdd()">＋ 加动作</button>
-    <span class="close" style="color:#94a3b8;float:none" onclick="confirmEndTraining()">✕</span>
+    <button class="btn ghost sm" style="margin-left:8px;border:none;background:var(--accent-soft);color:var(--accent)" onclick="openTrainAdd()">＋ 加动作</button>
+    <span class="close" style="color:var(--sub);float:none" onclick="confirmEndTraining()">✕</span>
   </div>
   <div class="ovbody" id="trainBody"></div>
   <div class="ovfoot">
-    <button class="btn ghost" style="background:#334155;color:#e2e8f0;border:none" onclick="confirmEndTraining()">结束</button>
+    <button class="btn ghost" style="background:var(--card2);color:var(--txt);border:1px solid var(--line2)" onclick="confirmEndTraining()">结束</button>
     <button class="btn" onclick="finishTraining()">保存并结束 ✓</button>
   </div>
 </div>
@@ -886,26 +893,10 @@
     <div class="lmeta" id="ldMeta"></div>
     <div class="lins" id="ldIns"></div>
     <div class="lattr" id="ldAttr"></div>
-    <button class="btn accent lbtn" onclick="libAddCurrent()">＋ 加入训练计划</button>
+    <button class="btn accent lbtn" id="ldAddBtn" onclick="libAddToDraft()">＋ 加入本计划</button>
   </div>
 </div>
 <!-- Add exercise to plan -->
-<div class="mask" id="libAddMask">
-  <div class="sheet libadd">
-    <span class="close" onclick="closeSheet('libAddMask')">×</span>
-    <h4>加入训练计划</h4>
-    <div class="row"><select id="libPlanSel"></select></div>
-    <div class="row"><input id="libNewPlan" type="text" placeholder="或输入新计划名称（留空则用所选计划）" /></div>
-    <div class="row flex">
-      <input id="libSets" type="number" value="3" placeholder="组" />
-      <input id="libWeight" type="number" value="20" placeholder="kg" />
-      <input id="libReps" type="number" value="12" placeholder="次" />
-    </div>
-    <div class="row"><input id="libRest" type="number" value="60" placeholder="组间休息(秒)" /></div>
-    <button class="btn accent" onclick="confirmLibAdd()">确认加入</button>
-  </div>
-</div>
-
 <script>
 /* ============ 数据层 ============ */
 const LS_KEY = 'health_workbench_v2';
@@ -1006,7 +997,6 @@ function goTab(name){
   if(name==='body') renderBody();
   if(name==='supplements') renderSupps();
   if(name==='news') renderNews();
-  if(name==='lib') loadExLib();
   if(name==='me') renderMe();
   window.scrollTo(0,0);
 }
@@ -1591,6 +1581,7 @@ function editPlan(id){
   renderPlanEdit();
   renderParts(); fillExNameSel(Object.keys(EX_LIB)[0]);
   resetExForm();
+  switchPlanAdd('lib'); loadExLib();
   document.getElementById('planMask').classList.add('show');
 }
 function delPlan(id){
@@ -1623,13 +1614,19 @@ function openPlanModal(){
   fillExNameSel(Object.keys(EX_LIB)[0]);
   renderCustomParts(); renderCustomExs();
   resetExForm();
+  switchPlanAdd('lib'); loadExLib();
   document.getElementById('planMask').classList.add('show');
+}
+function switchPlanAdd(mode){
+  document.querySelectorAll('#planAddSeg button').forEach(b=>b.classList.toggle('on', b.dataset.m===mode));
+  document.getElementById('planAddLib').style.display = mode==='lib'?'block':'none';
+  document.getElementById('planAddManual').style.display = mode==='manual'?'block':'none';
 }
 let customExSelExpanded=false, customExListExpanded=false;
 function renderParts(){
   const ps=document.getElementById('exPartSel'); ps.innerHTML='';
   const parts=Object.keys(EX_LIB).concat(state.customParts);
-  parts.forEach((part,i)=>{ const s=document.createElement('span'); s.textContent=part; if(i===0) s.classList.add('on');
+  parts.forEach((part,i)=>{ const s=document.createElement('span'); s.textContent=zhBody(part); if(i===0) s.classList.add('on');
     s.onclick=()=>{ ps.querySelectorAll('span').forEach(x=>x.classList.remove('on')); s.classList.add('on'); fillExNameSel(part); }; ps.appendChild(s); });
 }
 function fillExNameSel(part){
@@ -1709,7 +1706,7 @@ function renderPlanEdit(){
   const arr=draftPlan._draft||[];
   const box=document.getElementById('planEditList');
   if(!arr.length){ box.innerHTML='<div class="muted small">尚未添加动作</div>'; resetExForm(); return; }
-  box.innerHTML=arr.map((e,i)=>`<div class="item ${editingDraftIndex===i?'editing':''}"><div class="l"><div class="t">${e.part} · ${esc(e.name)}</div><div class="s">${e.sets} 组 × ${e.weight}kg × ${e.reps}次 · 休 ${e.rest}s</div></div><div class="r"><span class="del" title="修改" onclick="editDraftEx(${i})">✎</span><span class="del" title="删除" onclick="removeDraftEx(${i})">🗑</span></div></div>`).join('');
+  box.innerHTML=arr.map((e,i)=>`<div class="item ${editingDraftIndex===i?'editing':''}"><div class="l"><div class="t">${e.part} · ${esc(e.nameCn||e.name)}</div><div class="s">${e.sets} 组 × ${e.weight}kg × ${e.reps}次 · 休 ${e.rest}s</div></div><div class="r"><span class="del" title="修改" onclick="editDraftEx(${i})">✎</span><span class="del" title="删除" onclick="removeDraftEx(${i})">🗑</span></div></div>`).join('');
 }
 function editDraftEx(i){
   editingDraftIndex=i;
@@ -1743,7 +1740,7 @@ function removeDraftEx(i){
 function savePlan2(){
   draftPlan.name=document.getElementById('planName').value.trim()||'未命名计划';
   if(!draftPlan._draft || !draftPlan._draft.length){ toast('至少添加 1 个动作'); return; }
-  const exes=draftPlan._draft.map(e=>({id:e.id||uid(),part:e.part,name:e.name,sets:e.sets,weight:e.weight,reps:e.reps,rest:e.rest}));
+  const exes=draftPlan._draft.map(e=>({id:e.id||uid(),part:e.part,name:e.name,nameCn:e.nameCn||'',sets:e.sets,weight:e.weight,reps:e.reps,rest:e.rest,image:e.image||'',gif:e.gif||'',target:e.target||'',equipment:e.equipment||'',insZh:e.insZh||'',attr:e.attr||''}));
   if(editingPlanId){
     const p=state.plans.find(x=>x.id===editingPlanId);
     if(p){ p.name=draftPlan.name; p.exercises=exes; }
@@ -1765,7 +1762,8 @@ function startTraining(planId){
   const plan=state.plans.find(p=>p.id===planId); if(!plan) return;
   const date=document.getElementById('exDate').value||todayStr();
   T={planId, planName:plan.name, date, startedAt:Date.now(), logs: plan.exercises.map(ex=>({
-      name:ex.name, part:ex.part, rest:ex.rest,
+      name:ex.name, nameCn:ex.nameCn||'', part:ex.part, rest:ex.rest,
+      image:ex.image||'', gif:ex.gif||'', target:ex.target||'', equipment:ex.equipment||'', insZh:ex.insZh||'', attr:ex.attr||'',
       sets: ex.sets? Array.from({length:ex.sets},()=>({weight:ex.weight,reps:ex.reps,done:false})) : []
     }))};
   document.getElementById('trainTitle').textContent='训练中 · '+plan.name;
@@ -1787,7 +1785,9 @@ function renderTraining(){
     const done=ex.sets.every(s=>s.done);
     const active=ptr && ptr.ei===ei;
     html+=`<div class="tex ${done?'done':''} ${active?'active':''}">`;
-    html+=`<div class="texh"><span class="texpart">${esc(ex.part)}</span><b>${esc(ex.name)}</b>${done?'<span class="texok">✓</span>':''}</div>`;
+    html+=`<div class="texh" onclick="showTrainExDetail(${ei})">`;
+    if(ex.image) html+=`<img class="teximg" loading="lazy" src="${exMedia(ex.image)}" alt="" onerror="this.style.display='none'"/>`;
+    html+=`<span class="texpart">${esc(ex.part)}</span><b>${esc(ex.nameCn||ex.name)}</b>${done?'<span class="texok">✓</span>':''}</div>`;
     ex.sets.forEach((s,si)=>{
       const cur = active && si===ptr.si;
       html+=`<div class="tset ${s.done?'sdone':''} ${cur?'scur':''}">`;
@@ -1803,7 +1803,7 @@ function renderTraining(){
       }
       html+=`</div>`;
     });
-    html+=`<div class="texfoot"><button class="btn sm ghost" style="border:none;background:#263241;color:#ff9d2f" onclick="trainAddSet(${ei})">＋ 加一组</button><button class="btn sm ghost" style="border:none;background:#3a2230;color:#ff8095" onclick="trainRemoveEx(${ei})">🗑 移除动作</button></div>`;
+    html+=`<div class="texfoot"><button class="btn sm ghost" style="border:none;background:var(--accent-soft);color:var(--accent)" onclick="trainAddSet(${ei})">＋ 加一组</button><button class="btn sm ghost" style="border:none;background:rgba(185,28,28,.1);color:var(--red)" onclick="trainRemoveEx(${ei})">🗑 移除动作</button></div>`;
     html+=`</div>`;
   });
   el.innerHTML=html;
@@ -1848,7 +1848,7 @@ function renderRest(){
     card=document.createElement('div'); card.id='restCard'; card.className='restcard';
     card.innerHTML=`<div class="rr"><svg width="74" height="74" viewBox="0 0 74 74"><circle cx="37" cy="37" r="32" fill="none" stroke="#134e4a" stroke-width="7"/><circle id="restArc" cx="37" cy="37" r="32" fill="none" stroke="#5eead4" stroke-width="7" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="0"/></svg><div class="rc" id="restCount">0</div></div>
       <div class="rt"><b>组间休息</b><div>恢复中…可点击右侧跳过</div></div>
-      <button class="btn ghost" style="background:#134e4a;color:#5eead4;border:none;width:auto" onclick="skipRest()">跳过 ›</button>`;
+      <button class="btn ghost" style="background:rgba(15,118,110,.12);color:var(--teal);border:none;width:auto" onclick="skipRest()">跳过 ›</button>`;
     document.getElementById('trainBody').prepend(card);
   }
   const ring=document.getElementById('restArc');
@@ -1886,6 +1886,14 @@ function finishTraining(){
   save(); renderEx(); renderToday(); toast('训练已保存 💪');
 }
 
+function showTrainExDetail(ei){
+  if(!T) return;
+  const ex=T.logs[ei]; if(!ex) return;
+  const x={id:'',name:ex.nameCn||ex.name, body_part:ex.part, target:ex.target, equipment:ex.equipment,
+    gif_url:ex.gif, image:ex.image, instructions:{zh:ex.insZh||''}, attribution:ex.attr};
+  showLibDetail(x,'view');
+}
+
 /* ============ 训练中：临时增减动作/组数 ============ */
 let trainAddPart=null;
 function openTrainAdd(){
@@ -1899,7 +1907,7 @@ function openTrainAdd(){
 function renderTrainParts(){
   const ps=document.getElementById('taPartSel'); if(!ps) return; ps.innerHTML='';
   const parts=Object.keys(EX_LIB).concat(state.customParts);
-  parts.forEach((part,i)=>{ const s=document.createElement('span'); s.textContent=part; if(i===0){ s.classList.add('on'); trainAddPart=part; }
+  parts.forEach((part,i)=>{ const s=document.createElement('span'); s.textContent=zhBody(part); if(i===0){ s.classList.add('on'); trainAddPart=part; }
     s.onclick=()=>{ ps.querySelectorAll('span').forEach(x=>x.classList.remove('on')); s.classList.add('on'); trainAddPart=part; fillTrainNameSel(part); }; ps.appendChild(s); });
 }
 function fillTrainNameSel(part){
@@ -1939,6 +1947,15 @@ function trainRemoveEx(ei){ if(!confirm('从本次训练中移除该动作？'))
    运行时从 jsDelivr CDN 拉取并缓存到 localStorage；媒体 © Gym visual，须保留署名。 */
 const EXLIB_URL='https://cdn.jsdelivr.net/gh/hasaneyldrm/exercises-dataset@main/data/exercises.json';
 const EXLIB_MEDIA='https://cdn.jsdelivr.net/gh/hasaneyldrm/exercises-dataset@main/';
+/* 中文映射：数据集的 instructions/instruction_steps 自带 zh 字段，直接采用；
+   部位/器械/目标肌群与常见动作名在此映射为更地道的中文显示。 */
+const ZH_BODY={'waist':'腰腹','abs':'腹肌','chest':'胸','back':'背','lower back':'下背','upper back':'上背','lats':'背阔肌','traps':'斜方肌','legs':'腿','leg':'腿','quadriceps':'股四头肌','hamstrings':'腘绳肌','quads':'股四头肌','calves':'小腿','glutes':'臀','glute':'臀','butt':'臀','hips':'髋','hip flexors':'髋屈肌','arms':'手臂','biceps':'肱二头肌','triceps':'肱三头肌','forearms':'前臂','shoulders':'肩','shoulder':'肩','deltoids':'三角肌','neck':'颈','obliques':'腹斜肌','core':'核心','full body':'全身','cardio':'有氧','olympic weightlifting':'举重','stretching':'拉伸','strongman':'大力士','abductors':'髋外展肌','adductors':'髋内收肌','hip abductors':'髋外展肌','hip adductors':'髋内收肌','lower_body':'下肢','upper_body':'上肢','spine':'脊柱','lower legs':'小腿','upper legs':'大腿'};
+const ZH_EQUIP={'body weight':'自重','bodyweight':'自重','barbell':'杠铃','dumbbell':'哑铃','kettlebell':'壶铃','machine':'器械','cable':'绳索','band':'弹力带','medicine ball':'药球','exercise ball':'健身球','gym ball':'健身球','e-z curl bar':'EZ曲杆','foam roller':'泡沫轴','rope':'绳','tire':'轮胎','weighted':'负重','other':'其他','none':'无','elliptical machine':'椭圆机','stationary bike':'动感单车','bosu ball':'波速球','stability ball':'瑞士球','roller':'滚轮','bench':'卧推凳','pull-up bar':'单杠','smith machine':'史密斯机','suspension':'悬吊带','trap bar':'六角杠','log':'原木','sled':'雪橇','step':'台阶','box':'跳箱','mat':'垫','body only':'自重'};
+const ZH_NAME={'3/4 sit-up':'3/4 卷腹','sit-up':'仰卧起坐','crunch':'卷腹','reverse crunch':'反向卷腹','bicycle crunch':'自行车卷腹','pilates crunch':'普拉提卷腹','vertical leg crunch':'直腿卷腹','crossover crunch':'交叉卷腹','double crunch':'双重卷腹','plank':'平板支撑','plank jack':'平板开合','side plank':'侧平板','russian twist':'俄罗斯转体','leg raise':'举腿','hanging leg raise':'悬垂举腿','reverse leg raise':'反向举腿','mountain climber':'登山者','burpee':'波比跳','v-up':'V字起坐','toe touch':'触脚尖','flutter kick':'交替踢腿','scissor kick':'剪刀踢','barbell bench press':'杠铃卧推','bench press':'卧推','incline bench press':'上斜卧推','decline bench press':'下斜卧推','dumbbell bench press':'哑铃卧推','incline dumbbell press':'上斜哑铃卧推','push-up':'俯卧撑','incline push-up':'上斜俯卧撑','diamond push-up':'钻石俯卧撑','pike push-up':'派克俯卧撑','decline push-up':'下斜俯卧撑','wide push-up':'宽距俯卧撑','dips':'双杠臂屈伸','chest dip':'胸臂屈伸','chest fly':'夹胸','dumbbell fly':'哑铃飞鸟','cable fly':'绳索夹胸','pec deck':'蝴蝶机夹胸','cable crossover':'绳索夹胸','deadlift':'硬拉','conventional deadlift':'传统硬拉','romanian deadlift':'罗马尼亚硬拉','sumo deadlift':'相扑硬拉','stiff leg deadlift':'直腿硬拉','trap bar deadlift':'六角杠硬拉','rack pull':'架上硬拉','good morning':'早安式','snatch deadlift':'抓举硬拉','squat':'深蹲','back squat':'杠铃深蹲','front squat':'前蹲','goblet squat':'高脚杯深蹲','bulgarian split squat':'保加利亚分腿蹲','overhead squat':'过顶深蹲','split squat':'分腿蹲','pistol squat':'手枪蹲','jump squat':'跳深蹲','box squat':'箱式深蹲','wall sit':'靠墙静蹲','lunge':'弓步蹲','walking lunge':'行走弓步','reverse lunge':'反向弓步','side lunge':'侧弓步','curtsy lunge':'礼仪弓步','walking dumbbell lunge':'哑铃行走弓步','leg press':'腿举','leg extension':'腿屈伸','leg curl':'腿弯举','seated leg curl':'坐姿腿弯举','standing leg curl':'站姿腿弯举','calf raise':'提踵','standing calf raise':'站姿提踵','seated calf raise':'坐姿提踵','calf press':'小腿推','donkey calf raise':'驴式提踵','single leg calf raise':'单腿提踵','hip thrust':'髋推','glute bridge':'臀桥','single leg glute bridge':'单腿臀桥','hip abduction':'髋外展','hip adduction':'髋内收','clamshell':'蚌式','fire hydrant':'消防栓式','donkey kick':'驴踢','cable kickback':'绳索后踢','glute kickback':'臀后踢','pull-up':'引体向上','chin-up':'反握引体','lat pulldown':'高位下拉','wide grip lat pulldown':'宽握高位下拉','close grip pulldown':'窄握下拉','bent over row':'俯身划船','barbell row':'杠铃划船','dumbbell row':'哑铃划船','seated row':'坐姿划船','cable row':'绳索划船','t-bar row':'T杠划船','inverted row':'反向划船','machine row':'器械划船','face pull':'面拉','rear delt fly':'后束飞鸟','shrug':'耸肩','barbell shrug':'杠铃耸肩','dumbbell shrug':'哑铃耸肩','upright row':'直立划船','cable upright row':'绳索直立划船','overhead press':'站姿推举','shoulder press':'肩推','military press':'军事推举','arnold press':'阿诺德推举','dumbbell shoulder press':'哑铃肩推','machine shoulder press':'器械肩推','lateral raise':'侧平举','front raise':'前平举','cable lateral raise':'绳索侧平举','reverse fly':'反向飞鸟','bicep curl':'二头弯举','barbell curl':'杠铃弯举','dumbbell curl':'哑铃弯举','hammer curl':'锤式弯举','preacher curl':'牧师凳弯举','concentration curl':'集中弯举','cable curl':'绳索弯举','incline curl':'上斜弯举','ez bar curl':'EZ杆弯举','tricep extension':'三头伸展','tricep pushdown':'三头下压','overhead tricep extension':'过顶三头伸展','skull crusher':'仰卧臂屈伸','tricep dip':'三头臂屈伸','tricep kickback':'三头后踢','rope pushdown':'绳索下压','wrist curl':'腕弯举','reverse wrist curl':'反握腕弯举','farmer walk':'农夫行走','trap bar carry':'六角杠行走','kettlebell swing':'壶铃摆动','kettlebell goblet squat':'壶铃高脚杯深蹲','kettlebell snatch':'壶铃抓举','turkish get up':'土耳其起立','clean':'抓举','snatch':'挺举','clean and jerk':'挺举','thruster':'推举深蹲','push press':'借力推举','box jump':'跳箱','jump rope':'跳绳','broad jump':'立定跳远','burpee box jump':'波比跳箱','running':'跑步','cycling':'骑行','rowing':'划船机','elliptical':'椭圆机','stair climber':'爬楼机','jumping jack':'开合跳','cat cow':'猫牛式','child pose':'婴儿式','cobra stretch':'眼镜蛇式','downward dog':'下犬式','hip flexor stretch':'髋屈肌拉伸','quad stretch':'股四头拉伸','hamstring stretch':'腘绳肌拉伸','figure four stretch':'4字拉伸','pigeon pose':'鸽王式','neck curl':'颈弯举','neck extension':'颈伸展','neck rotation':'颈旋转','pallof press':'帕洛夫推举','copenhagen':'哥本哈根','nordic curl':'北欧腘绳肌弯举','reverse hyperextension':'反向超伸','isometric hold':'等长静力','side bend':'侧屈','wood chop':'伐木式','cable wood chop':'绳索伐木','donkey kicks':'驴踢','hip circle':'髋绕环','resistance band pull apart':'弹力带扩胸','band pull apart':'弹力带扩胸','plate pinch':'杠铃片捏握','grip strengthener':'握力训练','battle rope':'战绳','sled push':'雪橇推','sled pull':'雪橇拉','yoga ball crunch':'健身球卷腹','stability ball crunch':'瑞士球卷腹','cable crunch':'绳索卷腹','kneeling cable crunch':'跪姿绳索卷腹','ab wheel':'健腹轮','ab roller':'健腹轮','hanging knee raise':'悬垂举膝','knee raise':'举膝','toes to bar':'脚触杠','windshield wiper':'雨刷式','superman':'超人式','back extension':'背伸展','reverse fly':'反向飞鸟','lateral lunge':'侧弓步','sumo squat':'相扑深蹲','goblet squat':'高脚杯深蹲','zercher squat':'泽彻深蹲','front rack lunge':'前架弓步','step up':'台阶登','box step up':'跳箱登阶','calf stretch':'小腿拉伸','shoulder stretch':'肩部拉伸','chest stretch':'胸部拉伸','tricep stretch':'三头拉伸','bicep stretch':'二头拉伸','standing quad stretch':'站姿股四拉伸'};
+function zhBody(v){return ZH_BODY[(v||'').toLowerCase()]||v||'';}
+function zhEquip(v){return ZH_EQUIP[(v||'').toLowerCase()]||v||'';}
+function zhName(x){const c=x&&ZH_NAME[x.name];return c||(x&&x.name)||'';}
+let libDetailMode='add';
 let exLib=[], exLibFiltered=[], exLibPage=0, exLibCur=null;
 const EXLIB_PAGE=60;
 let exLibParts=[], exLibEquip=[], libFilt={part:null,equip:null};
@@ -1961,8 +1978,8 @@ async function loadExLib(){
   exLibPage=0; renderExLib();
 }
 function renderLibFilters(){
-  document.getElementById('libParts').innerHTML='<div class="flab">部位</div>'+exLibParts.map(p=>`<span class="chip2" data-v="${esc(p)}" onclick="libToggle('part',this)">${esc(p)}</span>`).join('');
-  document.getElementById('libEquip').innerHTML='<div class="flab">器械</div>'+exLibEquip.map(p=>`<span class="chip2" data-v="${esc(p)}" onclick="libToggle('equip',this)">${esc(p)}</span>`).join('');
+  document.getElementById('libParts').innerHTML='<div class="flab">部位</div>'+exLibParts.map(p=>`<span class="chip2" data-v="${esc(p)}" onclick="libToggle('part',this)">${esc(zhBody(p))}</span>`).join('');
+  document.getElementById('libEquip').innerHTML='<div class="flab">器械</div>'+exLibEquip.map(p=>`<span class="chip2" data-v="${esc(p)}" onclick="libToggle('equip',this)">${esc(zhEquip(p))}</span>`).join('');
 }
 function libToggle(kind,el){
   const v=el.dataset.v;
@@ -1986,49 +2003,40 @@ function renderExLib(){
   empty.style.display='none';
   const slice=exLibFiltered.slice(0,(exLibPage+1)*EXLIB_PAGE);
   grid.innerHTML=slice.map(x=>`<div class="libcard" onclick="openLibEx('${x.id}')">
-    <img loading="lazy" src="${exMedia(x.image)}" alt="${esc(x.name)}" onerror="this.style.display='none'"/>
-    <div class="lc-body"><div class="lc-name">${esc(x.name)}</div>
-    <div class="lc-meta">${esc(x.body_part||x.category)} · ${esc(x.equipment)}</div></div>
+    <img loading="lazy" src="${exMedia(x.image)}" alt="${esc(zhName(x))}" onerror="this.style.display='none'"/>
+    <div class="lc-body"><div class="lc-name">${esc(zhName(x))}</div>
+    <div class="lc-meta">${esc(zhBody(x.body_part||x.category))} · ${esc(zhEquip(x.equipment))}</div></div>
   </div>`).join('');
   more.style.display = slice.length<exLibFiltered.length ? 'block':'none';
 }
 function libLoadMore(){ exLibPage++; renderExLib(); }
-function openLibEx(id){
-  const x=exLib.find(e=>e.id===id); if(!x) return;
-  exLibCur=x;
+function showLibDetail(x,mode){
+  exLibCur=x; libDetailMode=mode||'add';
   const g=document.getElementById('ldGif'); g.onerror=null;
   g.onerror=()=>{ g.onerror=null; g.src=exMedia(x.image); };
   g.src=exMedia(x.gif_url);
-  document.getElementById('ldName').textContent=x.name;
-  document.getElementById('ldMeta').textContent=`${(x.body_part||x.category)||''} · 目标：${x.target||'-'} · 器械：${x.equipment||'-'}`;
+  const cn=zhName(x);
+  document.getElementById('ldName').textContent = (cn && cn!==x.name)? (cn+'  ·  '+x.name) : (cn||x.name);
+  document.getElementById('ldMeta').textContent=`${zhBody(x.body_part||x.category)||''} · 目标：${zhBody(x.target)||'-'} · 器械：${zhEquip(x.equipment)||'-'}`;
   const ins=(x.instructions&&(x.instructions.zh||x.instructions.en))||'暂无文字指导';
   document.getElementById('ldIns').textContent=ins;
   document.getElementById('ldAttr').textContent='动作示范媒体 © '+(x.attribution||'Gym visual — https://gymvisual.com/');
+  document.getElementById('ldAddBtn').style.display = (mode==='view')?'none':'block';
   document.getElementById('libDetailMask').classList.add('show');
 }
-function libAddCurrent(){ document.getElementById('libDetailMask').classList.remove('show'); openLibAdd(); }
-function openLibAdd(){
-  const sel=document.getElementById('libPlanSel');
-  sel.innerHTML = state.plans.map(p=>`<option value="${p.id}">${esc(p.name)}（${p.exercises.length}动作）</option>`).join('')
-    + '<option value="">— 新建计划 —</option>';
-  if(!state.plans.length) sel.value='';
-  document.getElementById('libAddMask').classList.add('show');
+function openLibEx(id){
+  const x=exLib.find(e=>e.id===id); if(!x) return;
+  showLibDetail(x,'add');
 }
-function confirmLibAdd(){
+function libAddToDraft(){
   if(!exLibCur) return;
   const x=exLibCur;
-  const newName=document.getElementById('libNewPlan').value.trim();
-  const selId=document.getElementById('libPlanSel').value;
-  const sets=parseInt(document.getElementById('libSets').value)||3;
-  const weight=parseFloat(document.getElementById('libWeight').value)||0;
-  const reps=parseInt(document.getElementById('libReps').value)||12;
-  const rest=parseInt(document.getElementById('libRest').value)||60;
-  let plan;
-  if(newName){ plan={id:uid(),name:newName,exercises:[]}; state.plans.push(plan); }
-  else if(selId){ plan=state.plans.find(p=>p.id===selId); }
-  if(!plan){ toast('请选择或填写计划名称'); return; }
-  plan.exercises.push({id:uid(),part:(x.body_part||x.category),name:x.name,sets,weight,reps,rest});
-  save(); closeSheet('libAddMask'); renderEx(); toast('已加入《'+plan.name+'》');
+  if(!draftPlan) draftPlan={name:'',_draft:[]};
+  draftPlan._draft.push({id:uid(),part:zhBody(x.body_part||x.category),name:x.name,nameCn:zhName(x),
+    sets:3,weight:0,reps:12,rest:60,
+    image:x.image,gif:x.gif_url,target:x.target,equipment:x.equipment,
+    insZh:(x.instructions&&x.instructions.zh)||'',attr:x.attribution});
+  closeSheet('libDetailMask'); renderPlanEdit(); toast('已加入计划');
 }
 
 /* ============ 身体 ============ */
