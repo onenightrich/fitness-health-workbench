@@ -330,6 +330,7 @@
   .t-tech{background:rgba(29,78,216,.12);color:#1d4ed8;}
   .t-ai{background:rgba(126,34,206,.12);color:#7e22ce;}
   .t-world{background:rgba(3,105,161,.12);color:#0369a1;}
+  .t-health{background:rgba(22,163,74,.12);color:#16a34a;}
 
 /* ===== 动作库（exercises-dataset） ===== */
 .libbar{position:sticky;top:0;z-index:5;background:var(--card);padding:4px 0 8px;}
@@ -1052,30 +1053,34 @@ function closeSheet(id){ document.getElementById(id).classList.remove('show'); }
 function esc(s){ return (s==null?'':''+s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 function fmtMMSS(s){ const m=Math.floor(s/60), ss=s%60; return String(m).padStart(2,'0')+':'+String(ss).padStart(2,'0'); }
 
-/* ============ 资讯模块（健康 + 科技/AI + 世界要闻） ============ */
-/* 内容来源：内置精选库（离线可用，每日按日期自动轮换）+ 多路实时源
-   （Google 新闻，经 rss2json 跨域代理）：健康健身 / 科技前沿 / AI 动态 / 世界要闻。
-   多源并行拉取，任一源失败自动回退对应离线内容。 */
+/* ============ 资讯模块（4 大类 · 每类每日 10 篇 · 全文阅读） ============ */
+/* 四大分类：健康健身 / 科技前沿 / AI 动态 / 世界要闻，每类每天固定 10 篇。
+   实时源（经 rss2json 跨域代理）优先取 RSS 自带全文（content:encoded）；
+   正文偏短的文章在打开时经 r.jina.ai 阅读代理自动抓取完整正文；
+   实时不足 10 篇时用内置完整长文库补齐（离线也可读全文）。 */
 const NEWS_FEEDS = [
-  {key:'health', type:'search', q:'健身 减脂 营养 训练 健康 睡眠 补剂', cat:null,    take:14},
-  {key:'tech',   type:'topic',  topic:'TECHNOLOGY',                     cat:'tech',  take:10},
-  {key:'ai',     type:'search', q:'人工智能 OR AI大模型 OR OpenAI OR 生成式AI', cat:'ai', take:10},
-  {key:'world',  type:'topic',  topic:'WORLD',                          cat:'world', take:10}
+  // 健康健身：Google 新闻中文检索（标题源，打开时自动抓全文）
+  {key:'health1', cat:'health', rss:'https://news.google.com/rss/search?q='+encodeURIComponent('健身 OR 减脂 OR 运动营养 OR 运动健康')+'&hl=zh-CN&gl=CN&ceid=CN:zh-Hans', take:12},
+  // 科技前沿：36氪 / 爱范儿（RSS 自带全文）
+  {key:'tech1', cat:'tech', rss:'https://36kr.com/feed', take:8},
+  {key:'tech2', cat:'tech', rss:'https://www.ifanr.com/feed', take:8},
+  // AI 动态：量子位 / 机器之心（RSS 自带全文或长摘要）
+  {key:'ai1', cat:'ai', rss:'https://www.qbitai.com/feed', take:8},
+  {key:'ai2', cat:'ai', rss:'https://www.jiqizhixin.com/rss', take:8},
+  // 世界要闻：BBC 中文 / 德国之声中文（直链源，打开时自动抓全文）
+  {key:'world1', cat:'world', rss:'https://feeds.bbci.co.uk/zhongwen/simp/rss.xml', take:8},
+  {key:'world2', cat:'world', rss:'https://rss.dw.com/xml/rss-chi-all', take:8}
 ];
 function buildFeedUrl(f){
-  const base = f.type==='topic'
-    ? 'https://news.google.com/rss/headlines/section/topic/'+f.topic+'?'
-    : 'https://news.google.com/rss/search?q='+encodeURIComponent(f.q)+'&';
-  const g = base + 'hl=zh-CN&gl=CN&ceid=CN:zh-Hans';
-  return 'https://api.rss2json.com/v1/api.json?rss_url=' + encodeURIComponent(g);
+  return 'https://api.rss2json.com/v1/api.json?rss_url=' + encodeURIComponent(f.rss);
 }
 let newsLive = false; // 是否已成功接入实时源
 let LIVE_POOL = [];   // 实时源文章池
 const CATS = [
-  {k:'all',n:'全部'},{k:'fit',n:'健身新闻'},{k:'fat',n:'减脂新知'},
-  {k:'nut',n:'营养饮食'},{k:'train',n:'训练科学'},{k:'rec',n:'恢复睡眠'},{k:'sup',n:'补剂研究'},
-  {k:'tech',n:'科技前沿'},{k:'ai',n:'AI 动态'},{k:'world',n:'世界要闻'}
+  {k:'health',n:'健康健身'},{k:'tech',n:'科技前沿'},{k:'ai',n:'AI 动态'},{k:'world',n:'世界要闻'}
 ];
+/* 旧的健康子分类统一归入 health */
+function normCat(c){ return (c==='tech'||c==='ai'||c==='world') ? c : 'health'; }
 const NEWS_POOL = [
   {id:'n01',cat:'fit',title:'2026 力量训练趋势：高频低量「维持法」走红',sum:'健身圈不再迷信越大重量越好，而是把训练拆成高频、低容量，保持神经募集与动作质量。',body:'社群中流行的并非越重越好，而是把训练拆成高频低量：每天轻量激活大肌群，维持动作质量与神经募集。\n对减脂期人群尤其友好——在热量缺口下仍能保住力量，同时降低中枢疲劳。建议每周至少 2 次覆盖胸背腿的复合动作。',source:'FitPulse 编辑部 / 社群趋势观察',read:3},
   {id:'n02',cat:'fit',title:'复合器械回归：健身房采购重心转向多关节设备',sum:'实地走访发现，更多场馆加大深蹲架、划船机与壶铃区投入，反映训练理念回归「功能性」。',body:'多地健身房反馈，会员对自由重量与复合器械的需求明显上升，单关节固定器械使用率下降。\n这契合运动科学共识：深蹲、硬拉、卧推、划船等多关节动作，单位时间收益更高，也更贴近日常生活动作模式。',source:'行业走访',read:3},
@@ -1108,9 +1113,30 @@ const NEWS_POOL = [
   {id:'n29',cat:'ai',title:'AI 私教走进家庭：摄像头动作纠错实用化',sum:'姿态估计模型可实时识别深蹲、硬拉轨迹并语音纠错。',body:'基于人体姿态估计的 AI 教练应用日趋成熟：手机摄像头即可检测膝内扣、弓背等常见错误并即时提醒。\n它适合动作学习期的新手做「第二双眼睛」，但大重量冲击组仍建议有真人保护。',source:'智能健身',read:3},
   {id:'n30',cat:'world',title:'WHO 重申：每周 150 分钟中等强度运动是底线',sum:'世界卫生组织身体活动指南：有氧+每周 2 次力量训练缺一不可。',body:'世界卫生组织建议成年人每周至少 150–300 分钟中等强度有氧，并进行 2 次以上覆盖大肌群的力量训练。\n达标者全因死亡率、心血管疾病与抑郁风险均显著更低——「动起来」仍是全球共识的头号处方。',source:'世界卫生组织',read:3},
   {id:'n31',cat:'world',title:'全球慢病报告：生活方式干预重回政策核心',sum:'多国将运动处方、减糖行动纳入公共卫生优先事项。',body:'全球范围内肥胖与 2 型糖尿病发病率持续攀升，多国推出含糖饮料税、食品标签改革与社区运动计划。\n对个人而言，规律训练+控制加工食品摄入，依旧是对抗慢病性价比最高的投资。',source:'全球健康瞭望',read:3},
-  {id:'n32',cat:'world',title:'极端高温频发：户外运动补水与时段策略',sum:'多地夏季破纪录高温，户外训练需调整时间与补水节奏。',body:'气候变化使极端高温更频繁。高温日户外训练建议：避开 11–16 时；每 15–20 分钟补水 150–250 ml；出汗量大时补充电解质。\n出现头晕、恶心、停止出汗等中暑征兆应立即停止运动并降温。',source:'国际气象与健康',read:3}
+  {id:'n32',cat:'world',title:'极端高温频发：户外运动补水与时段策略',sum:'多地夏季破纪录高温，户外训练需调整时间与补水节奏。',body:'气候变化使极端高温更频繁。高温日户外训练建议：避开 11–16 时；每 15–20 分钟补水 150–250 ml；出汗量大时补充电解质。\n出现头晕、恶心、停止出汗等中暑征兆应立即停止运动并降温。',source:'国际气象与健康',read:3},
+  {id:'n33',cat:'tech',title:'空间计算元年之后：头显设备走向轻量化日常化',sum:'从千克级头盔到百克级眼镜，空间计算设备正在跨过「愿意每天戴」的门槛。',body:'过去两年，头戴显示设备完成了从「体验设备」到「效率工具」的关键转身。第一代空间计算头显证明了手眼协同交互、超大虚拟屏幕与沉浸办公的可行性，但接近半公斤到一公斤的重量、有限的续航，让它始终停留在客厅与书房。\n行业当前的主攻方向非常一致：把算力甩给口袋里的手机或专用计算单元，让头显本体只保留显示与传感，从而把重量压到 100 克上下——接近一副厚重眼镜。光波导、Micro-OLED 与碳化硅镜片的良率爬坡，是这条路线能否走通的核心变量。\n软件生态同样在换挡。操作系统层面，空间窗口管理、眼动+手势输入规范逐渐统一；应用层面，办公协同、3D 设计审阅、远程协助与健身指导成为最先落地的场景。对普通用户来说，一个值得关注的信号是：主流视频与办公应用开始原生适配空间界面，而不是简单移植平板版。\n多数分析师判断，眼镜形态设备的出货量将在未来三年进入千万级。真正的临界点不是某项单点技术，而是「重量低于 120 克、续航超过 4 小时、价格进入 3000 元档」三个条件同时满足的那一天。',source:'科技前沿观察',read:6},
+  {id:'n34',cat:'tech',title:'人形机器人从实验室走向工厂：量产在即的三道关',sum:'多家厂商公布人形机器人量产计划，但灵巧手、电池与成本仍是拦路虎。',body:'人形机器人正处在从演示视频走向真实产线的关键节点。多家头部厂商已把机器人送进汽车工厂做搬运、分拣与质检试点，按小时计的「机器人工时」第一次有了真实商业报价。\n量产前仍有三道关。第一是灵巧手：目前多数机械手自由度在 6–12 之间，抓取鸡蛋与拧螺丝可以，穿针引线还远；触觉传感器的成本与耐用性是短板。第二是能源：全身几十个关节电机在负载工况下功耗惊人，多数机型实际续航仅 2–4 小时，换电或快充方案尚未标准化。第三是成本：核心零部件（谐波减速器、行星滚柱丝杠、力矩电机）国产化率快速提升，整机成本已从百万元级降到二十万元级，但要进入「一年回本」的甜区仍需再砍一半。\n值得注意的是训练范式的变化：越来越多厂商放弃纯手工编程，转向「视频学习+远程遥操作示教+强化学习」组合，让机器人看人类操作视频就能学会新任务的雏形已经出现。\n对普通人而言，人形机器人最先出现的地方不会是家庭客厅，而是工厂、仓库、商场导览与养老辅助场景。家用通用机器人仍需等待可靠性与安全标准的成熟。',source:'智能制造前线',read:6},
+  {id:'n35',cat:'tech',title:'低轨卫星互联网加速组网：手机直连卫星进入实用阶段',sum:'不换手机、不装天线，普通手机在无信号区域收发消息已成现实。',body:'低轨卫星互联网的竞争已从「发多少颗星」进入「服务多少用户」阶段。全球在轨通信卫星数量突破万颗，头部星座开始提供面向普通手机的直连服务：在没有地面基站的沙漠、远海与山区，手机无需任何改装即可收发短信，部分区域已支持语音与低速数据。\n技术上的关键突破是卫星侧的大型相控阵天线与更灵敏的接收机——把「基站」搬到 550 公里高空，并让它以每秒 7.5 公里的速度飞行时仍能与手机保持链接。频谱协调则是另一场看不见的战争，各国运营商与星座公司正在就复用地面频段展开博弈。\n对户外运动人群，这项技术的直接价值是安全兜底：徒步、越野、远海钓鱼时，即便完全脱网也能发出求救信息与位置坐标。多款旗舰手机已内置卫星 SOS 功能，触发后可将定位与预设信息发往救援中心。\n行业预计，未来两年手机直连卫星将从「应急短信」升级到「窄带语音+物联网」，而真正的宽带直连仍受物理限制，短期内无法替代地面网络。',source:'通信产业评论',read:6},
+  {id:'n36',cat:'tech',title:'新型储能装机爆发：电网的「充电宝」如何改变用电',sum:'锂电、钠电、液流与压缩空气储能齐头并进，电价峰谷差催生新商业模式。',body:'随着风电与光伏在电力结构中的占比持续提升，「发电看天吃饭」与「用电按需索取」之间的矛盾越来越依赖储能来调和。全球新型储能装机连续多年翻倍增长，电化学储能电站从示范项目变成电网标配。\n技术路线呈现分层格局：锂离子电池凭借成熟供应链主导 2–4 小时短时储能；钠离子电池以更低成本与更好低温性能切入用户侧；液流电池与压缩空气储能则瞄准 6 小时以上的长时储能场景。\n商业模式的变化更值得关注。峰谷电价差扩大后，「谷时充电、峰时放电」的套利空间催生了工商业储能热潮；虚拟电厂把千家万户的分布式电池、电动车与空调聚合成可调度资源，用户侧从纯消费者变成「产消者」。\n对家庭用户，直接影响是分时电价越来越普遍：把电动车充电、洗衣烘干等大功率用电挪到谷时，一年可省下可观电费。部分城市试点的家庭储能+光伏组合，已能让自发自用比例超过 70%。',source:'能源转型观察',read:6},
+  {id:'n37',cat:'tech',title:'量子计算跨过纠错门槛：从物理比特到逻辑比特',sum:'多个团队演示「逻辑比特错误率低于物理比特」，实用化路线图首次清晰。',body:'量子计算最重要的里程碑不是比特数，而是纠错。过去一年，多个团队相继演示了量子纠错的「盈亏平衡点」：把多个物理量子比特编码成一个逻辑比特后，逻辑比特的错误率低于组成它的任何单个物理比特——这意味着「越纠越错」的魔咒被打破。\n路线图因此清晰起来：当前处于「含噪声中等规模量子（NISQ）」向「早期容错量子计算」过渡期，业界普遍预计需要数千个高质量物理比特支撑数十个逻辑比特，才能在化学模拟、材料设计等领域跑出经典计算机无法企及的结果。\n产业动作明显提速：超导、离子阱、中性原子与光量子四条路线均获大额投资，云端量子算力服务已向企业与高校开放，药企开始用量子模拟探索小分子构象。\n对大众而言，短期不必担心「量子破解密码」——可抵抗量子攻击的后量子密码标准已经发布，主流浏览器与操作系统正在陆续切换。量子计算的第一批红利更可能出现在新材料与新药研发，而非日常应用。',source:'前沿计算评论',read:6},
+  {id:'n38',cat:'tech',title:'脑机接口进入临床快车道：意念打字与运动重建',sum:'植入式脑机接口多例人体试验进展顺利，瘫痪患者用意念操控光标与机械臂。',body:'脑机接口（BCI）正在从科幻叙事进入严肃医疗。多家公司获批开展植入式人体临床试验，首批受试者已能凭「想象运动」操控电脑光标、玩棋类游戏、用机械臂完成抓取，意念打字速度纪录被不断刷新。\n技术分野明显：高带宽路线将柔性电极直接植入运动皮层，信号质量高但需要开颅；血管内支架电极经颈静脉送入，创伤更小；非植入式头皮脑电（EEG）带宽有限，主要用于康复训练与消费级专注度监测。\n真正的挑战在长期：电极周围的胶质增生会让信号逐月衰减，设备寿命、无线供电与感染风险决定了它能否成为「用十年」的医疗器械。伦理框架也在同步搭建——神经数据的所有权、隐私与「认知增强」边界成为立法讨论的新话题。\n理性预期是：未来五年 BCI 的主战场是重度瘫痪、渐冻症与失语患者的功能重建；健康人「插管学外语」仍属科幻。对普通人更现实的，是消费级神经反馈设备在睡眠与专注训练上的谨慎应用。',source:'生物科技瞭望',read:6},
+  {id:'n39',cat:'tech',title:'自动驾驶商业化分水岭：无人出租车跑通单城盈利模型',sum:'头部玩家在单个城市实现运营打平，规模化复制成为下一考题。',body:'自动驾驶行业经历漫长的资本寒冬后，迎来第一批真实的商业化信号：头部无人出租车（Robotaxi）运营方宣布在单个城市达到运营层面盈亏平衡——车辆改装成本降至传统燃油车价格区间，单车日均订单突破 20 单，安全员全面撤出。\n成本下降来自三方面：激光雷达价格五年内跌去九成；域控制器算力集中化削减了整车传感与计算冗余；车辆由改装转向前装量产，摊薄了单车成本。\n监管框架同步成型：多地发放「全无人商业化运营」牌照，事故责任认定从「驾驶人责任」转向「运营方+制造方」共担，保险产品随之更新。公众接受度调查显示，实际乘坐过的用户信任度显著高于未乘坐者——体验本身是最好的公关。\n接下来的考题是跨城复制：每进入一座新城市，高精地图、本地法规、极端天气与驾驶文化都是变量。行业共识是，未来三年 Robotaxi 将在几十个大城市常态化运营，但私家车的「全场景自动驾驶」仍需更长时间。',source:'出行科技评论',read:6},
+  {id:'n40',cat:'ai',title:'从聊天到干活：AI 智能体的「工具使用」革命',sum:'能规划、能调用工具、能自我纠错的智能体，正在重新定义「用电脑」。',body:'大模型的竞争焦点已从「答得好」转向「做得成」。新一代 AI 智能体（Agent）的标配能力是：把一句模糊指令拆解成多步计划，自主调用浏览器、代码解释器、文件系统与第三方 API，执行中发现错误还能回溯重试。\n技术底座有三块：函数调用（让模型输出结构化的工具调用指令）、长上下文与记忆机制（跨会话记住偏好与项目状态）、以及执行沙箱（把模型操作隔离在安全环境里）。评测基准也随之升级——不再考问答，而是考「在真实网站订机票」「在代码库里修 bug」的端到端成功率。\n落地最快的场景是软件工程：从写函数到理解整个仓库、提交可合并的代码补丁，AI 编码智能体已成为开发者日常工具。其次是办公自动化——整理邮件、汇总报表、跨系统搬运数据这类「数字体力活」。\n使用建议：把智能体当作「实习生」而非「专家」——给清晰目标、限定操作范围、关键动作要求确认。当前智能体在开放环境的任务成功率仍明显低于受控环境，重要操作务必保留人工审核。',source:'AI 产业深观察',read:6},
+  {id:'n41',cat:'ai',title:'开源与闭源模型差距收窄：小模型的大逆袭',sum:'百亿参数级开源模型在多数日常任务上逼近顶级闭源模型，端侧部署成为可能。',body:'过去一年 AI 领域最重要的结构性变化，是开源模型与顶级闭源模型的差距从「代差」缩小到「肉眼难辨」。在通用问答、代码生成与多语言理解等主流评测上，最强开源模型的得分已进入第一梯队；而百亿参数级的「小钢炮」模型，通过更优的数据配比与蒸馏技术，性能追平了两年前的千亿级旗舰。\n这带来两个直接后果。其一是端侧 AI 爆发：8B 级模型经量化后可在旗舰手机与轻薄本流畅运行，离线翻译、会议纪要、照片语义搜索不再依赖云端，隐私敏感场景（医疗、法务）尤其受益。其二是推理成本雪崩：同等能力的 API 价格一年内下降了一个数量级，AI 功能从「付费增值」变成「默认内置」。\n竞争逻辑随之改变：单纯的模型能力不再是护城河，数据飞轮、工具生态与分发渠道成为新的竞争主轴。对开发者来说，「先用开源模型起步、按需切换云端旗舰」成为标准架构。\n对普通用户，最实际的变化是：你手机里的输入法、相册与笔记应用，正在悄悄内置一个不联网也能用的本地大模型。',source:'大模型技术评论',read:6},
+  {id:'n42',cat:'ai',title:'AI 视频生成走向可控：从「抽卡」到「导演」',sum:'镜头语言、角色一致性与物理真实感大幅改善，短片制作流程被重构。',body:'AI 视频生成正在跨越从「惊艳 Demo」到「生产工具」的鸿沟。新一代视频模型支持分镜级控制：指定镜头运动（推拉摇移）、锁定角色形象跨镜头一致、控制光线与景深，生成时长也从几秒扩展到分钟级。\n背后的技术演进包括：时空联合建模让物体运动更符合物理直觉（水流、布料、碰撞不再鬼畜）；参考图/参考视频条件注入解决了「同一主角换场景」的一致性难题；而「先生成关键帧再插值」的工作流大幅降低了算力成本。\n产业影响立竿见影：广告与电商短视频的制作成本下降 80% 以上，动画工作室把 AI 用于分镜预演与背景生成，独立创作者一个人就能完成过去需要小团队的短片。与此同时，平台方全面上线 AI 内容标识与数字水印，应对深度伪造风险。\n给创作者的建议：AI 视频当前最擅长 5–15 秒的单镜头与氛围片段，叙事长片仍需人工剪辑串联。把它当作「无限素材库+分镜预演器」，而不是一键成片机。',source:'AIGC 前沿',read:6},
+  {id:'n43',cat:'ai',title:'AI 医疗拿下多项监管批准：从辅助阅片到主动预警',sum:'AI 在眼底筛查、心电预警与病理诊断上获批临床使用，医生角色转向复核。',body:'AI 医疗正在从论文走向诊室。全球获监管批准的 AI 医疗器械数量快速攀升，覆盖眼底病变筛查、肺结节检出、心电房颤预警、病理切片分析等数十个场景。多项前瞻性研究显示，「AI 初筛+医生复核」模式在保持准确率的同时，将阅片效率提升 3–5 倍。\n新的趋势是从「被动诊断」走向「主动预警」：可穿戴设备的连续心电与血氧数据经 AI 分析后，能在房颤、睡眠呼吸暂停等问题出现早期征兆时提醒就医；医院信息系统里的 AI 则监控住院患者生命体征，提前数小时预警败血症风险。\n大语言模型的加入改变了医患交互：辅助写病历、生成出院小结、把检查报告翻译成患者能懂的语言。研究显示，AI 生成的健康解释在「共情度」评分上甚至高于疲惫的人类医生——但事实性错误仍需医生把关。\n对个人的提醒：AI 健康工具适合做「早发现」的哨兵，不能替代诊断。看到可穿戴设备的异常提醒，正确动作是记录并咨询医生，而不是自行用药或恐慌。',source:'智慧医疗观察',read:6},
+  {id:'n44',cat:'ai',title:'AI 训练数据之争：版权、合成数据与「数据枯竭」',sum:'高质量语料逼近开采上限，合成数据与授权交易成为新常态。',body:'支撑大模型能力狂飙的互联网语料正在逼近开采上限。研究机构估计，公开网络中的高质量文本将在数年内被「用尽」，而版权诉讼与网站反爬条款让可用数据进一步收缩——数据，而非算力，可能成为下一个瓶颈。\n行业的应对分三条线。其一是授权化：模型厂商与新闻集团、图片库、学术出版商签订数据授权协议，「内容换现金/换流量」成为媒体新收入。其二是合成数据：用强模型生成训练弱模型的数据，在数学、代码等可验证领域效果显著；但研究也警告「模型吃自己产出」可能导致质量退化，需要严格的质量过滤。其三是私域数据：企业内部文档、行业数据库成为垂直模型的差异化燃料。\n版权规则也在成形：多地法院初步裁定「训练属于合理使用、但输出不得实质性复制原作」，同时要求训练数据来源透明化。创作者一侧，「禁止 AI 训练」的元数据标记与集体授权组织开始出现。\n这场博弈的走向将决定 AI 行业格局：数据壁垒越高，越有利于财大气粗的巨头；开放数据联盟与合成数据技术，则是中小玩家的希望所在。',source:'AI 治理评论',read:6},
+  {id:'n45',cat:'ai',title:'具身智能：给大模型一副身体有多难',sum:'视觉-语言-动作模型让机器人「听懂人话干粗活」，但真实世界仍是最难考场。',body:'把大模型装进机器人——具身智能（Embodied AI）被视为通往通用人工智能的必经之路。核心进展是视觉-语言-动作（VLA）模型：机器人看着摄像头画面、听着自然语言指令，直接输出关节动作序列，「把桌上的可乐递给我」这类指令的成功率大幅提升。\n数据是最大瓶颈。语言模型可以吞下整个互联网，机器人却必须在物理世界一次次试错。行业的解法包括：大规模远程遥操作采集真人示教数据、在物理仿真器里并行训练数万个虚拟机器人、以及让模型从人类第一视角视频中学习操作常识。\n泛化能力是分水岭：在训练过的厨房里表现完美的机器人，换一间布局不同的厨房可能寸步难行。当前最好的系统在「见过的任务+新环境」组合下成功率约六到八成，距离商用可靠性仍有差距。\n落地节奏预计是：先仓储物流（环境结构化）、再商业服务（导览、清洁、上料）、最后才是家庭场景。对这一领域的合理预期是「五年进工厂、十年进家门」。',source:'机器人智能前沿',read:6},
+  {id:'n46',cat:'ai',title:'AI 素养成为新「读写能力」：普通人该掌握什么',sum:'提示词只是入门，验证信息、划定边界、人机协作才是核心技能。',body:'当 AI 渗入搜索、办公与创作的每个环节，「会用 AI」正在成为像识字一样的基础能力。多国已把 AI 素养写入中小学课纲，企业培训里 AI 技能课的需求量翻了数倍。\n真正的 AI 素养远不止「会写提示词」。第一层是理解边界：知道大模型是概率生成而非查询数据库，幻觉（编造事实）是其固有属性，重要信息必须交叉验证。第二层是任务拆解：把复杂目标拆成 AI 擅长的子任务（草拟、总结、翻译、头脑风暴），关键判断留给自己。第三层是数据意识：明白输入给 AI 的内容可能被用于训练，敏感信息脱敏后再提问。\n对职场人的务实建议：把 AI 当「初稿引擎」——让它完成 0 到 60 分，你负责 60 到 95 分的事实核查、逻辑打磨与责任签字。研究显示，「AI+熟练使用者」的产出质量与速度显著超过纯人工或纯 AI。\n最需要警惕的不是被 AI 取代，而是不加验证地相信 AI。批判性思维，在 AI 时代反而更值钱。',source:'数字素养研究',read:6},
+  {id:'n47',cat:'world',title:'全球经济进入「低增长常态」：各国押注生产率突围',sum:'主要经济体增速中枢下移，AI 与绿色投资被视为打破停滞的两把钥匙。',body:'国际组织最新展望显示，全球经济正进入一个增速中枢明显低于疫情前的「低增长常态」：人口老龄化拖累劳动力供给，高债务约束财政空间，地缘摩擦推高贸易成本，三重压力叠加。\n各国的突围思路高度一致——押注生产率。一方面是数字化：制造业加速引入工业机器人与 AI 质检，服务业用大模型重塑客服、金融与法律流程；另一方面是绿色投资：新能源、电网改造与建筑节能改造既拉动当期需求，也降低长期能源成本。\n劳动力市场呈现「冰火两重天」：传统制造与初级文书岗位收缩，而 AI 工程、护理养老、新能源安装等岗位缺口巨大。多国推出「技能再培训账户」，鼓励在职人员转向紧缺职业。\n对普通家庭的启示：低增长时代，工资的普涨会更稀缺，个人回报越来越取决于技能稀缺度；保持学习能力、关注健康（减少大额医疗支出）、理性配置资产，是穿越周期的三件套。',source:'全球经济瞭望',read:6},
+  {id:'n48',cat:'world',title:'全球粮食体系承压：气候波动重塑餐桌与贸易',sum:'极端天气冲击主产区，各国加固粮食安全网，餐桌结构悄然变化。',body:'连续的极端天气正在考验全球粮食体系：主产区轮番遭遇干旱与洪涝，小麦、稻米与咖啡、可可等经济作物价格剧烈波动，部分出口国阶段性限制粮食出口以稳定国内市场。\n应对呈现三个层次。国家层面，主要经济体扩大战略储备、分散进口来源，并加大对耐旱耐涝品种育种的投入；基因编辑作物的审批在多国提速。产业层面，垂直农场与设施农业在城市周边扩张，滴灌与精准施肥技术把「每一方水的产量」提到新高。家庭层面，食品价格波动推动消费结构变化——植物蛋白、本地当季食材的接受度持续上升。\n值得关注的是水产与蛋白转型：养殖水产、禽肉对牛羊肉的替代加速，既因价格，也因其更低的碳足迹与更高的饲料转化率。\n对个人的实用建议：饮食多样化本身就是抗风险策略——蛋白来源在鱼、禽、蛋、豆之间轮换，主食粗细搭配，既符合营养学建议，也天然对冲单一品类涨价。',source:'全球农业观察',read:6},
+  {id:'n49',cat:'world',title:'人口大分流：老龄化与年轻化并存的世界',sum:'一半世界在变老，另一半在变年轻，劳动力与资本开始跨洲重新配置。',body:'全球人口版图正经历深刻分流：东亚与欧洲快速老龄化，多国总和生育率跌破 1.5；而南亚与非洲仍处于年轻人口红利期，未来二十年全球新增劳动力的绝大部分将来自这些地区。\n这场分流正在重排全球经济地理。制造业沿着「劳动力成本+供应链安全」双坐标迁移，年轻经济体承接产能的同时，也在跳过传统发展阶段——移动支付、共享出行在部分非洲城市的渗透率已超过许多发达城市。\n老龄化社会则在探索新解法：延迟退休与弹性就业成为政策标配，「银发经济」从养老院扩展到适老化家装、老年旅游与陪伴机器人；日本与北欧的经验显示，健康寿命（而非寿命）才是关键变量——把慢病推迟十年，养老金与医疗体系的压力将完全不同。\n这也解释了为何各国公共卫生政策不约而同转向「预防优先」：全民运动计划、减盐减糖行动、癌症早筛普及。对个人而言，规律锻炼与体重管理不只是审美选择，更是应对长寿时代最确定的投资。',source:'全球人口研究',read:6},
+  {id:'n50',cat:'world',title:'深海与极地：资源勘探热潮下的规则竞赛',sum:'深海采矿、极地航道与海底电缆，成为大国博弈的新前沿。',body:'当陆地资源开发趋于饱和，深海与极地正成为新的竞争前沿。国际海底管理局围绕深海多金属结核采矿的规章谈判进入关键阶段：支持者强调新能源产业对镍、钴、稀土的巨大需求，反对者则警告深海生态系统一旦破坏几乎不可逆，多国呼吁在科学评估完成前暂缓商业开采。\n北极的变化同样深远：夏季海冰持续消退使东北航道通航窗口逐年拉长，欧亚之间的航运距离可缩短三成，沿线港口与破冰船队建设提速。与此同时，极地科考站数量创新高，气候监测、冰芯研究与渔业资源评估成为国际合作与竞争交织的领域。\n更隐蔽的战场在海底：承载全球 95% 以上国际数据流量的海底光缆，其安全性被提升到战略高度，多国组建专门力量保护关键缆线，新缆线路由刻意绕开高风险海域。\n这些看似遥远的议题，最终都会传导到日常生活——新能源车的电池成本、跨境网速与国际运费，都与这场「蓝色规则竞赛」息息相关。',source:'海洋与极地观察',read:6},
+  {id:'n51',cat:'world',title:'全球旅游业强劲复苏：体验式与可持续成为关键词',sum:'国际旅客量超过疫情前水平，旅行方式从「打卡」转向「深度体验」。',body:'全球旅游业完成了一次超预期复苏：国际旅客人次全面超过疫情前峰值，旅游收入占全球 GDP 比重回升至一成左右。但复苏的结构与从前不同——游客用脚投票，选出了新的旅行方式。\n第一个关键词是体验式：观光打卡让位于「住进当地」——烹饪课、徒步向导、节庆参与类产品预订量成倍增长；运动旅行异军突起，马拉松、骑行、滑雪与潜水目的地的「以赛促旅」模式被广泛复制。\n第二个关键词是可持续：过度旅游让多个名城开征旅游税、限制邮轮停靠与短租房源；游客端，低碳出行选项（铁路替代短途航班）与生态住宿认证的搜索量显著上升。\n第三个变化是技术渗透：AI 行程规划工具让自由行门槛大降，实时翻译耳机基本消除了点餐问路的语言障碍，数字游民签证在四十多个国家落地，「边工作边旅行」从口号变成一种签证类别。\n对旅行者的建议：错峰与二线目的地是当下的性价比之选——同样的预算，避开顶流城市往往能换来翻倍的体验质量。',source:'全球文旅观察',read:6},
+  {id:'n52',cat:'world',title:'太空经济进入基建时代：从发射竞赛到轨道服务',sum:'可回收火箭把入轨成本打下来之后，太空的「水电煤」生意开始了。',body:'太空产业正在从「把东西送上去」的发射竞赛，转向「在轨道上做生意」的基建时代。可回收火箭把每公斤入轨成本压到十年前的十分之一以下，全球年发射次数屡创新高，商业卫星占比超过八成。\n新的增长点在轨道服务：在轨加注（给卫星「加油」延寿）、太空拖船（把卫星从停泊轨道摆渡到工作轨道）、碎片清除（用机械臂或网具捕获失效卫星）相继完成商业首单。地球观测数据服务则把农业估产、碳排监测、灾害评估做成了按订阅收费的成熟生意。\n载人航天的商业化同样提速：商业空间站模块开始在轨测试，以接替服役超期的国际空间站；绕月旅游、商业出舱行走已有真实订单。月球则成为下一个十年的焦点——多国探测器瞄准月球南极的水冰，那是未来深空任务的燃料库。\n对普通人，太空经济并不遥远：手机直连卫星、更精准的天气预报、导航精度的持续提升，都是这场基建热潮的「地面红利」。',source:'太空经济评论',read:6},
+  {id:'n53',cat:'world',title:'全球心理健康危机受到正视：职场与校园成主战场',sum:'焦虑与抑郁负担持续攀升，多国把心理健康纳入医保与劳动保护。',body:'世界卫生组织的数据持续敲响警钟：焦虑与抑郁已成为全球疾病负担的主要来源之一，每年因此损失的生产力以万亿美元计，而多数国家心理健康投入不足卫生预算的 2%。转变正在发生——心理健康第一次被广泛纳入主流政策议程。\n职场是第一主战场：多国立法确立「离线权」，下班后有权不回工作消息；大型企业把心理咨询纳入员工福利，管理者接受识别下属心理危机的培训；「安静离职」与「过劳」的讨论推动工时制度改革试点。\n校园是第二主战场：青少年心理问题检出率上升引发对社交媒体的立法审视，多国出台未成年人使用社交平台的年龄与时长限制；学校配备专职心理教师的比例被写入硬性指标。\n科学界的共识越来越清晰：规律运动是被最充分验证的「非药物抗抑郁处方」之一——每周三次、每次 30 分钟的中等强度运动，对轻中度抑郁的改善效果可与一线药物相当。睡眠、日照与线下社交，是另外三味被低估的良药。\n如果你长期情绪低落、兴趣减退或睡眠紊乱超过两周，请把求助专业人士当作和看感冒一样自然的事。',source:'全球健康瞭望',read:7}
 ];
-let newsCat='all', newsShuffle=0, newsFeaturedId=null;
+let newsCat='health', newsShuffle=0, newsFeaturedId=null;
 
 function hashStr(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0;}
 function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
@@ -1118,62 +1144,106 @@ function dailySeed(){ return hashStr(todayStr()) + newsShuffle*9973; }
 
 function catName(k){ const c=CATS.find(x=>x.k===k); return c?c.n:k; }
 
-/* 实时池优先；实时源没覆盖到的分类，用离线精选库补齐 */
-function newsPool(){
-  if(!LIVE_POOL.length) return NEWS_POOL;
-  const liveCats=new Set(LIVE_POOL.map(a=>a.cat));
-  return LIVE_POOL.concat(NEWS_POOL.filter(a=>!liveCats.has(a.cat)));
+/* 每个分类的当日 10 篇：实时源优先，不足用内置完整长文补齐 */
+function newsPool(){ return LIVE_POOL.concat(NEWS_POOL); }
+function shuffleArr(arr,seed){
+  const a=arr.slice(); const rnd=mulberry32(seed);
+  for(let i=a.length-1;i>0;i--){const j=Math.floor(rnd()*(i+1));[a[i],a[j]]=[a[j],a[i]];}
+  return a;
 }
-
-function shuffledPool(seed){
-  const arr=newsPool().slice();
-  const rnd=mulberry32(seed);
-  for(let i=arr.length-1;i>0;i--){const j=Math.floor(rnd()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]];}
-  return arr;
+function dailyCatList(cat){
+  const seed=dailySeed()+hashStr(cat);
+  const live=shuffleArr(LIVE_POOL.filter(a=>normCat(a.cat)===cat),seed);
+  const off =shuffleArr(NEWS_POOL.filter(a=>normCat(a.cat)===cat),seed);
+  return live.concat(off).slice(0,10);
 }
 function renderNews(){
-  const seed=dailySeed();
-  const arr=shuffledPool(seed);
-  newsFeaturedId = arr[0].id;
-  const featured = arr[0];
-  const daily = arr.slice(1,9);
-  // 精选 hero
-  document.getElementById('newsHeroTitle').textContent = featured.title;
-  document.getElementById('newsHeroSum').textContent = featured.sum;
-  document.getElementById('newsHeroMeta').innerHTML =
-    `<span class="ncat t-${featured.cat}">${catName(featured.cat)}</span><span>📚 ${featured.source}</span><span>⏱ ${featured.read} 分钟读</span>`;
-  // 分类条
+  const list=dailyCatList(newsCat);
+  // 精选 hero = 当前分类第一篇
+  const featured=list[0];
+  newsFeaturedId = featured ? featured.id : null;
+  if(featured){
+    document.getElementById('newsHeroTitle').textContent = featured.title;
+    document.getElementById('newsHeroSum').textContent = featured.sum;
+    document.getElementById('newsHeroMeta').innerHTML =
+      `<span class="ncat t-${normCat(featured.cat)}">${catName(normCat(featured.cat))}</span><span>📚 ${esc(featured.source)}</span><span>⏱ ${featured.read} 分钟读</span>`;
+  }
+  // 分类条（4 大类）
   const cats=document.getElementById('newsCats');
   cats.innerHTML = CATS.map(c=>`<div class="cat ${newsCat===c.k?'on':''}" onclick="setNewsCat('${c.k}')">${c.n}</div>`).join('');
-  // 列表
-  const list = newsCat==='all' ? daily : newsPool().filter(a=>a.cat===newsCat);
+  // 当日 10 篇列表
   const box=document.getElementById('newsList');
   if(!list.length){ box.innerHTML='<div class="empty">该分类暂无内容</div>'; }
-  else box.innerHTML = list.map(a=>`
+  else box.innerHTML = list.map((a,i)=>`
     <div class="newsitem" onclick="openNews('${a.id}')">
-      <div class="ncat t-${a.cat}">${catName(a.cat)}</div>
+      <div class="ncat t-${normCat(a.cat)}">${i+1} / 10 · ${catName(normCat(a.cat))}${a.link?'':' · 精选'}</div>
       <div class="ntitle">${esc(a.title)}</div>
       <div class="nsum">${esc(a.sum)}</div>
       <div class="nmeta"><span>📚 ${esc(a.source)}</span><span>⏱ ${a.read} 分钟读</span></div>
     </div>`).join('');
   document.getElementById('newsSrcNote').textContent = newsLive
-    ? '资讯来源：Google 新闻实时聚合（健康健身 · 科技 · AI · 世界要闻）· 离线精选库作备用'
-    : '资讯来源：本地精选资讯库（每日按日期自动更新）· 实时源加载中或暂不可用';
+    ? '每类每日 10 篇 · 实时源全文优先，打开自动补全正文 · 内置长文库兜底'
+    : '每类每日 10 篇 · 当前为内置完整长文库（实时源加载中或暂不可用）';
 }
 function setNewsCat(k){ newsCat=k; renderNews(); }
 function refreshNews(){ newsShuffle=(newsShuffle+1)%97; renderNews(); toast('已为你换一批内容'); }
 function openNewsHero(){ if(newsFeaturedId) openNews(newsFeaturedId); }
+let ndCurrentId=null;
+function renderNdBody(a){
+  document.getElementById('ndBody').innerHTML=a.body.split('\n').filter(p=>p.trim()).map(p=>`<p>${esc(p)}</p>`).join('');
+}
 function openNews(id){
   const a=newsPool().find(x=>x.id===id); if(!a) return;
-  document.getElementById('ndCat').className='ncat t-'+a.cat;
-  document.getElementById('ndCat').textContent=catName(a.cat);
+  ndCurrentId=id;
+  const nc=normCat(a.cat);
+  document.getElementById('ndCat').className='ncat t-'+nc;
+  document.getElementById('ndCat').textContent=catName(nc);
   document.getElementById('ndTitle').textContent=a.title;
   document.getElementById('ndMeta').innerHTML=`<span>📚 ${esc(a.source)}</span><span>⏱ ${a.read} 分钟读</span>`;
-  document.getElementById('ndBody').innerHTML=a.body.split('\n').map(p=>`<p>${esc(p)}</p>`).join('');
+  renderNdBody(a);
   const lk=document.getElementById('ndLink');
-  if(a.link){ lk.href=a.link; lk.style.display='inline-block'; } else { lk.style.display='none'; }
+  lk.style.display='none';
   document.getElementById('ndSrc').textContent='来源：'+a.source;
   document.getElementById('newsDetailMask').classList.add('show');
+  // 正文偏短的实时文章：自动抓取完整正文
+  if(a.link && a.needFull && !a._fetching){ fetchFullArticle(a); }
+  else if(a.link && a.needFull){ /* 抓取中 */ }
+  else if(a.link && a._fullFailed){ lk.href=a.link; lk.style.display='inline-block'; }
+}
+/* 经 r.jina.ai 阅读代理抓取文章完整正文（浏览器端可跨域） */
+async function fetchFullArticle(a){
+  a._fetching=true;
+  const el=document.getElementById('ndBody');
+  if(ndCurrentId===a.id) el.innerHTML+= '<p class="muted small" id="ndLoading">⏳ 正在为你加载完整正文…</p>';
+  try{
+    const ctrl=new AbortController(); const tm=setTimeout(()=>ctrl.abort(),15000);
+    const r=await fetch('https://r.jina.ai/'+a.link,{signal:ctrl.signal,headers:{'X-Return-Format':'text'}});
+    clearTimeout(tm);
+    if(!r.ok) throw new Error('http '+r.status);
+    let txt=await r.text();
+    // 去掉 jina 头部元信息
+    const mi=txt.indexOf('Markdown Content:'); if(mi>-1) txt=txt.slice(mi+17);
+    // 清理 markdown 链接/图片/多余符号
+    txt=txt.replace(/!\[[^\]]*\]\([^)]*\)/g,'')
+           .replace(/\[([^\]]*)\]\([^)]*\)/g,'$1')
+           .replace(/[#*_>`|]+/g,'')
+           .replace(/https?:\/\/\S+/g,'');
+    const paras=txt.split(/\n+/).map(s=>s.trim())
+      .filter(s=>s.length>=20 && !/^(Title:|URL Source:|Published Time:|Warning:|图片来源|版权所有|©|Copyright|订阅|关注我们|相关(阅读|推荐)|分享到|广告)/i.test(s));
+    const full=paras.join('\n');
+    if(full.length>300){
+      a.body=full.length>6000? full.slice(0,6000)+'…' : full;
+      a.read=Math.max(1,Math.min(15,Math.round(a.body.length/400)));
+      a.needFull=false;
+      if(ndCurrentId===a.id){ renderNdBody(a); document.getElementById('ndMeta').innerHTML=`<span>📚 ${esc(a.source)}</span><span>⏱ ${a.read} 分钟读</span>`; }
+    } else { throw new Error('too short'); }
+  }catch(e){
+    a._fullFailed=true;
+    if(ndCurrentId===a.id){
+      const ld=document.getElementById('ndLoading'); if(ld) ld.textContent='未能获取完整正文，以上为摘要。';
+      const lk=document.getElementById('ndLink'); if(a.link){ lk.href=a.link; lk.style.display='inline-block'; }
+    }
+  }finally{ a._fetching=false; }
 }
 function stripHtml(s){ const d=document.createElement('div'); d.innerHTML=s||''; return (d.textContent||'').replace(/\s+/g,' ').trim(); }
 function classifyNews(t){
@@ -1192,25 +1262,43 @@ function extractNews(title){
   const m=(title||'').match(/(.+?)\s[-–—｜|]\s(.+)$/);
   return m ? {title:m[1].trim(), source:m[2].trim()} : {title:title||'', source:'Google 新闻'};
 }
+/* HTML → 保留段落结构的纯文本 */
+function htmlToParas(html){
+  if(!html) return '';
+  let s=String(html)
+    .replace(/<(script|style)[\s\S]*?<\/\1>/gi,'')
+    .replace(/<br\s*\/?>/gi,'\n')
+    .replace(/<\/(p|div|li|h[1-6]|blockquote|section|figcaption)>/gi,'\n')
+    .replace(/<[^>]+>/g,'');
+  const d=document.createElement('textarea'); d.innerHTML=s; s=d.value; // 解码实体
+  return s.split(/\n+/).map(x=>x.replace(/\s+/g,' ').trim())
+    .filter(x=>x.length>=8 && !/^(图片来源|图源|来源[:：]|责任编辑|版权|©|Copyright|点击(查看|阅读)|扫码|关注(公众号|我们)|原文链接|广告|The post )/i.test(x))
+    .join('\n');
+}
 async function fetchOneFeed(f){
   const r=await fetch(buildFeedUrl(f),{cache:'no-store'});
   if(!r.ok) return [];
   const data=await r.json();
   if(data.status!=='ok' || !Array.isArray(data.items) || !data.items.length) return [];
   return data.items.slice(0,f.take||10).map((it,idx)=>{
-    const raw=stripHtml(it.description||it.content||it.title||'');
+    // rss2json：content = content:encoded（全文源），description = 摘要
+    const full=htmlToParas(it.content||'');
+    const desc=htmlToParas(it.description||'');
     const ex=extractNews(it.title||'');
-    const body=raw||ex.title;
-    const sum=body.slice(0,70)+(body.length>70?'…':'');
+    const body=(full.length>desc.length? full: desc) || ex.title;
+    const firstLine=body.split('\n')[0]||'';
+    const sum=(firstLine.length>90? firstLine.slice(0,90)+'…' : firstLine) || ex.title;
+    const src=(it.author&&String(it.author).trim()) || (data.feed&&data.feed.title? String(data.feed.title).split(/[-–—|｜]/)[0].trim() : '') || ex.source;
     return {
       id:'live_'+f.key+'_'+(it.guid||it.link||idx),
-      cat:f.cat||classifyNews(ex.title+' '+body),
+      cat:f.cat,
       title:ex.title,
       sum:sum,
-      body:body+(body.length<200?'\n\n（摘要来自 Google 新闻聚合，点「查看原文报道」阅读全文）':''),
-      source:ex.source,
+      body:body,
+      source:src,
       link:it.link||'',
-      read:Math.max(1,Math.min(8,Math.round(body.length/110)))
+      needFull: body.length<400,   // 正文偏短：打开时自动抓完整正文
+      read:Math.max(1,Math.min(15,Math.round(body.length/400)))
     };
   });
 }
