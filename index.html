@@ -327,6 +327,9 @@
   .t-train{background:rgba(15,118,110,.12);color:#0f766e;}
   .t-rec{background:rgba(109,40,217,.12);color:#6d28d9;}
   .t-sup{background:rgba(180,83,9,.12);color:#b45309;}
+  .t-tech{background:rgba(29,78,216,.12);color:#1d4ed8;}
+  .t-ai{background:rgba(126,34,206,.12);color:#7e22ce;}
+  .t-world{background:rgba(3,105,161,.12);color:#0369a1;}
 
 /* ===== 动作库（exercises-dataset） ===== */
 .libbar{position:sticky;top:0;z-index:5;background:var(--card);padding:4px 0 8px;}
@@ -924,6 +927,7 @@
     <h4 id="ndTitle" style="line-height:1.4"></h4>
     <div class="nmeta" id="ndMeta" style="margin-bottom:4px"></div>
     <div class="nbody" id="ndBody"></div>
+    <a id="ndLink" href="#" target="_blank" rel="noopener" style="display:none;margin:12px 0 4px;font-size:13px;color:var(--accent);font-weight:700;text-decoration:none">查看原文报道 ↗</a>
     <div class="srcline" id="ndSrc"></div>
   </div>
 </div>
@@ -1048,20 +1052,29 @@ function closeSheet(id){ document.getElementById(id).classList.remove('show'); }
 function esc(s){ return (s==null?'':''+s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 function fmtMMSS(s){ const m=Math.floor(s/60), ss=s%60; return String(m).padStart(2,'0')+':'+String(ss).padStart(2,'0'); }
 
-/* ============ 健康资讯模块 ============ */
-/* 内容来源：默认内置精选健康资讯库（离线可用，每日按日期自动轮换）；
-   同时接入 Google 新闻实时源（经 rss2json 跨域代理），拉取健身/减脂/营养/训练/
-   睡眠/补剂等中文资讯，按关键词自动分类，失败自动回退离线库。 */
-const NEWS_QUERY = '健身 减脂 营养 训练 健康 睡眠 补剂'; // 实时源检索词（可自行修改）
-function buildNewsFeedUrl(){
-  const g = 'https://news.google.com/rss/search?q=' + encodeURIComponent(NEWS_QUERY)
-          + '&hl=zh-CN&gl=CN&ceid=CN:zh-Hans';
+/* ============ 资讯模块（健康 + 科技/AI + 世界要闻） ============ */
+/* 内容来源：内置精选库（离线可用，每日按日期自动轮换）+ 多路实时源
+   （Google 新闻，经 rss2json 跨域代理）：健康健身 / 科技前沿 / AI 动态 / 世界要闻。
+   多源并行拉取，任一源失败自动回退对应离线内容。 */
+const NEWS_FEEDS = [
+  {key:'health', type:'search', q:'健身 减脂 营养 训练 健康 睡眠 补剂', cat:null,    take:14},
+  {key:'tech',   type:'topic',  topic:'TECHNOLOGY',                     cat:'tech',  take:10},
+  {key:'ai',     type:'search', q:'人工智能 OR AI大模型 OR OpenAI OR 生成式AI', cat:'ai', take:10},
+  {key:'world',  type:'topic',  topic:'WORLD',                          cat:'world', take:10}
+];
+function buildFeedUrl(f){
+  const base = f.type==='topic'
+    ? 'https://news.google.com/rss/headlines/section/topic/'+f.topic+'?'
+    : 'https://news.google.com/rss/search?q='+encodeURIComponent(f.q)+'&';
+  const g = base + 'hl=zh-CN&gl=CN&ceid=CN:zh-Hans';
   return 'https://api.rss2json.com/v1/api.json?rss_url=' + encodeURIComponent(g);
 }
 let newsLive = false; // 是否已成功接入实时源
+let LIVE_POOL = [];   // 实时源文章池
 const CATS = [
   {k:'all',n:'全部'},{k:'fit',n:'健身新闻'},{k:'fat',n:'减脂新知'},
-  {k:'nut',n:'营养饮食'},{k:'train',n:'训练科学'},{k:'rec',n:'恢复睡眠'},{k:'sup',n:'补剂研究'}
+  {k:'nut',n:'营养饮食'},{k:'train',n:'训练科学'},{k:'rec',n:'恢复睡眠'},{k:'sup',n:'补剂研究'},
+  {k:'tech',n:'科技前沿'},{k:'ai',n:'AI 动态'},{k:'world',n:'世界要闻'}
 ];
 const NEWS_POOL = [
   {id:'n01',cat:'fit',title:'2026 力量训练趋势：高频低量「维持法」走红',sum:'健身圈不再迷信越大重量越好，而是把训练拆成高频、低容量，保持神经募集与动作质量。',body:'社群中流行的并非越重越好，而是把训练拆成高频低量：每天轻量激活大肌群，维持动作质量与神经募集。\n对减脂期人群尤其友好——在热量缺口下仍能保住力量，同时降低中枢疲劳。建议每周至少 2 次覆盖胸背腿的复合动作。',source:'FitPulse 编辑部 / 社群趋势观察',read:3},
@@ -1086,7 +1099,16 @@ const NEWS_POOL = [
   {id:'n20',cat:'sup',title:'咖啡因：训练前 3–6 mg/kg 提升表现',sum:'训练前 30–60 分钟摄入咖啡因，可延缓疲劳、提升专注与力量输出。',body:'证据一致：训练前 30–60 分钟按 3–6 mg/kg 体重摄入咖啡因（约一杯美式到两杯），能提升耐力与力量表现。\n注意个体差异与下午摄入影响睡眠；敏感者避免傍晚使用，高血压/心律异常者慎用。',source:'运动营养',read:2},
   {id:'n21',cat:'sup',title:'鱼油（Omega-3）：看 EPA+DHA 总量',sum:'鱼油价值在 EPA+DHA 总量，而非胶囊粒数；主打抗炎与心血管收益。',body:'选鱼油别只看「鱼油 1000 mg」，要看标注的 EPA+DHA 合计——有效剂量常需每日 1–2 g 以上。\n本应用把鱼油放进「餐后补剂」提醒，正是因为它随餐吸收更好、对胃部更友好。',source:'营养生化',read:3},
   {id:'n22',cat:'sup',title:'蛋白粉 ≠ 作弊：与食物蛋白等价',sum:'乳清/植物蛋白粉只是方便的蛋白来源，用来补缺口，不是必选项。',body:'蛋白粉的本质就是浓缩蛋白，吸收利用与天然食物无实质差异，优势在方便与精准计量。\n若日常饮食已吃够蛋白，不必硬喝；若缺口大（如减脂期、素食），它是省事的补足手段。',source:'运动营养',read:2},
-  {id:'n23',cat:'sup',title:'维生素 D：先测血再补才有效',sum:'维生素 D 缺乏者补充才见效，盲目大剂量并无额外好处。',body:'维生素 D 与免疫、骨健康相关；但只有缺乏人群补充才看见明显改善，血浓度正常者额外补收益有限。\n建议先体检看 25(OH)D，再决定是否补、补多少，别把复合维生素当「保险」无脑吃。',source:'临床营养',read:3}
+  {id:'n23',cat:'sup',title:'维生素 D：先测血再补才有效',sum:'维生素 D 缺乏者补充才见效，盲目大剂量并无额外好处。',body:'维生素 D 与免疫、骨健康相关；但只有缺乏人群补充才看见明显改善，血浓度正常者额外补收益有限。\n建议先体检看 25(OH)D，再决定是否补、补多少，别把复合维生素当「保险」无脑吃。',source:'临床营养',read:3},
+  {id:'n24',cat:'tech',title:'端侧算力跃升：手机本地跑大模型渐成标配',sum:'新一代移动芯片将 NPU 算力大幅提升，离线语音、图像理解不再依赖云端。',body:'手机 SoC 的 NPU 算力逐代翻倍，越来越多 AI 功能（语音转写、照片语义搜索、实时翻译）可完全在本地运行。\n对健身场景意味着：动作识别、体态评估等功能未来无需上传视频即可离线完成，隐私与延迟都更友好。',source:'科技行业观察',read:3},
+  {id:'n25',cat:'tech',title:'可穿戴设备进入「体征全家桶」时代',sum:'手表/手环从计步进化到血氧、心率变异性、皮温与睡眠分期全监测。',body:'主流可穿戴设备已能连续监测静息心率、HRV、血氧与睡眠分期，部分产品引入无创血糖趋势探索。\n实用建议：别盯单日数值，关注 7 天趋势——静息心率持续走高常意味着恢复不足，该减量训练了。',source:'消费电子评测',read:3},
+  {id:'n26',cat:'tech',title:'固态电池临近量产：续航与安全双升级',sum:'能量密度提升与热失控风险下降，将改变电动车与消费电子形态。',body:'多家厂商公布固态/半固态电池量产时间表，能量密度较传统锂电提升明显，且针刺不起火。\n对普通用户的直接感受将是：手表更轻、续航更久，户外运动记录不再为电量焦虑。',source:'新能源产业',read:3},
+  {id:'n27',cat:'ai',title:'AI 智能体元年：从「陪聊」到替你完成任务',sum:'大模型正从问答工具进化为能规划、执行多步任务的智能体。',body:'智能体（Agent）能力成为大模型竞争焦点：拆解目标、调用工具、自动完成预订/整理/分析等多步骤任务。\n健康领域的落地包括：自动整理体检报告、根据训练记录动态调整下周计划、按饮食日志生成采购清单。',source:'AI 产业观察',read:3},
+  {id:'n28',cat:'ai',title:'多模态大模型：看图识餐盘热量越来越准',sum:'图像+文本联合理解让「拍照记饮食」的误差持续下降。',body:'新一代多模态模型对食物识别、分量估计的能力显著增强，拍照估算热量的可用性大幅提高。\n提醒：AI 估算仍有 ±20% 左右误差，包装食品优先看营养成分表，散装菜肴用 AI 估算做参考即可。',source:'AI 应用评测',read:3},
+  {id:'n29',cat:'ai',title:'AI 私教走进家庭：摄像头动作纠错实用化',sum:'姿态估计模型可实时识别深蹲、硬拉轨迹并语音纠错。',body:'基于人体姿态估计的 AI 教练应用日趋成熟：手机摄像头即可检测膝内扣、弓背等常见错误并即时提醒。\n它适合动作学习期的新手做「第二双眼睛」，但大重量冲击组仍建议有真人保护。',source:'智能健身',read:3},
+  {id:'n30',cat:'world',title:'WHO 重申：每周 150 分钟中等强度运动是底线',sum:'世界卫生组织身体活动指南：有氧+每周 2 次力量训练缺一不可。',body:'世界卫生组织建议成年人每周至少 150–300 分钟中等强度有氧，并进行 2 次以上覆盖大肌群的力量训练。\n达标者全因死亡率、心血管疾病与抑郁风险均显著更低——「动起来」仍是全球共识的头号处方。',source:'世界卫生组织',read:3},
+  {id:'n31',cat:'world',title:'全球慢病报告：生活方式干预重回政策核心',sum:'多国将运动处方、减糖行动纳入公共卫生优先事项。',body:'全球范围内肥胖与 2 型糖尿病发病率持续攀升，多国推出含糖饮料税、食品标签改革与社区运动计划。\n对个人而言，规律训练+控制加工食品摄入，依旧是对抗慢病性价比最高的投资。',source:'全球健康瞭望',read:3},
+  {id:'n32',cat:'world',title:'极端高温频发：户外运动补水与时段策略',sum:'多地夏季破纪录高温，户外训练需调整时间与补水节奏。',body:'气候变化使极端高温更频繁。高温日户外训练建议：避开 11–16 时；每 15–20 分钟补水 150–250 ml；出汗量大时补充电解质。\n出现头晕、恶心、停止出汗等中暑征兆应立即停止运动并降温。',source:'国际气象与健康',read:3}
 ];
 let newsCat='all', newsShuffle=0, newsFeaturedId=null;
 
@@ -1096,8 +1118,15 @@ function dailySeed(){ return hashStr(todayStr()) + newsShuffle*9973; }
 
 function catName(k){ const c=CATS.find(x=>x.k===k); return c?c.n:k; }
 
+/* 实时池优先；实时源没覆盖到的分类，用离线精选库补齐 */
+function newsPool(){
+  if(!LIVE_POOL.length) return NEWS_POOL;
+  const liveCats=new Set(LIVE_POOL.map(a=>a.cat));
+  return LIVE_POOL.concat(NEWS_POOL.filter(a=>!liveCats.has(a.cat)));
+}
+
 function shuffledPool(seed){
-  const arr=NEWS_POOL.slice();
+  const arr=newsPool().slice();
   const rnd=mulberry32(seed);
   for(let i=arr.length-1;i>0;i--){const j=Math.floor(rnd()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]];}
   return arr;
@@ -1117,7 +1146,7 @@ function renderNews(){
   const cats=document.getElementById('newsCats');
   cats.innerHTML = CATS.map(c=>`<div class="cat ${newsCat===c.k?'on':''}" onclick="setNewsCat('${c.k}')">${c.n}</div>`).join('');
   // 列表
-  const list = newsCat==='all' ? daily : NEWS_POOL.filter(a=>a.cat===newsCat);
+  const list = newsCat==='all' ? daily : newsPool().filter(a=>a.cat===newsCat);
   const box=document.getElementById('newsList');
   if(!list.length){ box.innerHTML='<div class="empty">该分类暂无内容</div>'; }
   else box.innerHTML = list.map(a=>`
@@ -1128,19 +1157,21 @@ function renderNews(){
       <div class="nmeta"><span>📚 ${esc(a.source)}</span><span>⏱ ${a.read} 分钟读</span></div>
     </div>`).join('');
   document.getElementById('newsSrcNote').textContent = newsLive
-    ? '资讯来源：Google 新闻实时聚合（'+NEWS_QUERY+'）· 离线精选库作备用'
-    : '资讯来源：本地精选健康资讯库（每日按日期自动更新）· 实时源加载中或暂不可用';
+    ? '资讯来源：Google 新闻实时聚合（健康健身 · 科技 · AI · 世界要闻）· 离线精选库作备用'
+    : '资讯来源：本地精选资讯库（每日按日期自动更新）· 实时源加载中或暂不可用';
 }
 function setNewsCat(k){ newsCat=k; renderNews(); }
 function refreshNews(){ newsShuffle=(newsShuffle+1)%97; renderNews(); toast('已为你换一批内容'); }
 function openNewsHero(){ if(newsFeaturedId) openNews(newsFeaturedId); }
 function openNews(id){
-  const a=NEWS_POOL.find(x=>x.id===id); if(!a) return;
+  const a=newsPool().find(x=>x.id===id); if(!a) return;
   document.getElementById('ndCat').className='ncat t-'+a.cat;
   document.getElementById('ndCat').textContent=catName(a.cat);
   document.getElementById('ndTitle').textContent=a.title;
   document.getElementById('ndMeta').innerHTML=`<span>📚 ${esc(a.source)}</span><span>⏱ ${a.read} 分钟读</span>`;
   document.getElementById('ndBody').innerHTML=a.body.split('\n').map(p=>`<p>${esc(p)}</p>`).join('');
+  const lk=document.getElementById('ndLink');
+  if(a.link){ lk.href=a.link; lk.style.display='inline-block'; } else { lk.style.display='none'; }
   document.getElementById('ndSrc').textContent='来源：'+a.source;
   document.getElementById('newsDetailMask').classList.add('show');
 }
@@ -1152,34 +1183,48 @@ function classifyNews(t){
   if(/训练|力量|增肌|肌肉|举重|深蹲|硬拉|卧推|撸铁|组数/.test(s)) return 'train';
   if(/睡眠|恢复|休息|拉伸|放松/.test(s)) return 'rec';
   if(/补剂|蛋白粉|肌酸|咖啡因|维生素|鱼油|补给/.test(s)) return 'sup';
+  if(/人工智能|大模型|机器学习|智能体|ChatGPT|OpenAI|AIGC|生成式|\bAI\b/i.test(s)) return 'ai';
+  if(/科技|芯片|半导体|手机|互联网|软件|硬件|航天|机器人|新能源|电池/.test(s)) return 'tech';
+  if(/国际|全球|各国|联合国|世卫|外交|峰会/.test(s)) return 'world';
   return 'fit';
 }
 function extractNews(title){
   const m=(title||'').match(/(.+?)\s[-–—｜|]\s(.+)$/);
   return m ? {title:m[1].trim(), source:m[2].trim()} : {title:title||'', source:'Google 新闻'};
 }
+async function fetchOneFeed(f){
+  const r=await fetch(buildFeedUrl(f),{cache:'no-store'});
+  if(!r.ok) return [];
+  const data=await r.json();
+  if(data.status!=='ok' || !Array.isArray(data.items) || !data.items.length) return [];
+  return data.items.slice(0,f.take||10).map((it,idx)=>{
+    const raw=stripHtml(it.description||it.content||it.title||'');
+    const ex=extractNews(it.title||'');
+    const body=raw||ex.title;
+    const sum=body.slice(0,70)+(body.length>70?'…':'');
+    return {
+      id:'live_'+f.key+'_'+(it.guid||it.link||idx),
+      cat:f.cat||classifyNews(ex.title+' '+body),
+      title:ex.title,
+      sum:sum,
+      body:body+(body.length<200?'\n\n（摘要来自 Google 新闻聚合，点「查看原文报道」阅读全文）':''),
+      source:ex.source,
+      link:it.link||'',
+      read:Math.max(1,Math.min(8,Math.round(body.length/110)))
+    };
+  });
+}
 async function fetchNewsFeed(){
   try{
-    const r=await fetch(buildNewsFeedUrl(),{cache:'no-store'});
-    if(!r.ok) return;
-    const data=await r.json();
-    if(data.status!=='ok' || !Array.isArray(data.items) || !data.items.length) return;
-    const arts=data.items.slice(0,40).map((it,idx)=>{
-      const raw=stripHtml(it.description||it.content||it.title||'');
-      const ex=extractNews(it.title||'');
-      const body=raw||ex.title;
-      const sum=body.slice(0,70)+(body.length>70?'…':'');
-      return {
-        id:'live'+(it.guid||it.link||idx),
-        cat:classifyNews(ex.title+' '+body),
-        title:ex.title,
-        sum:sum,
-        body:body+(body.length<200?'\n\n（摘要来自 Google 新闻聚合，点开可查看原文完整报道）':''),
-        source:ex.source,
-        read:Math.max(1,Math.min(8,Math.round(body.length/110)))
-      };
-    });
-    if(arts.length){ NEWS_POOL.length=0; arts.forEach(a=>NEWS_POOL.push(a)); newsLive=true; renderNews(); }
+    const results=await Promise.allSettled(NEWS_FEEDS.map(f=>fetchOneFeed(f)));
+    const arts=[];
+    results.forEach(r=>{ if(r.status==='fulfilled' && Array.isArray(r.value)) arts.push(...r.value); });
+    if(arts.length){
+      // 去重（同标题只保留一条）
+      const seen=new Set();
+      LIVE_POOL=arts.filter(a=>{ if(seen.has(a.title)) return false; seen.add(a.title); return true; });
+      newsLive=true; renderNews();
+    }
   }catch(e){ /* 网络异常：保留离线精选库 */ }
 }
 
