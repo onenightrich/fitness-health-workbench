@@ -226,6 +226,20 @@
   .supp .info{flex:1;min-width:0;}
   .supp .info .n{font-size:14px;font-weight:700;color:var(--txt);}
   .supp .info .d{font-size:11.5px;color:var(--sub);}
+  .supp.done .info .n{color:var(--sub);text-decoration:line-through;}
+  .supp.done .ic{opacity:.55;}
+  .slot-h{display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:800;color:var(--txt);margin:14px 0 2px;padding:6px 10px;background:var(--card2);border:1px solid var(--line);border-radius:10px;}
+  .slot-h:first-child{margin-top:4px;}
+  .slot-h .slot-cnt{margin-left:auto;font-weight:700;font-size:11.5px;color:var(--sub);}
+  .slot-h .slot-cnt.ok{color:#15803d;}
+  .slot-h.sm{margin:10px 0 2px;padding:4px 10px;font-size:12px;}
+  .chk{width:26px;height:26px;border-radius:9px;border:2px solid var(--line2);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:#fff;flex:none;transition:.15s;}
+  .chk.on{background:#16a34a;border-color:#16a34a;}
+  .supp-prog{margin:2px 0 8px;}
+  .supp-prog .sp-txt{font-size:12px;color:var(--sub);margin-bottom:6px;}
+  .supp-prog .sp-txt b{color:var(--txt);font-family:var(--mono);}
+  .supp-prog .sp-bar{height:8px;border-radius:99px;background:var(--card2);border:1px solid var(--line);overflow:hidden;}
+  .supp-prog .sp-bar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#8b5cf6,#16a34a);transition:width .25s;}
   .toggle{width:50px;height:28px;border-radius:16px;background:var(--line2);position:relative;cursor:pointer;flex:none;transition:background .25s;}
   .toggle.on{background:var(--accent);}
   .toggle::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:left .25s;box-shadow:0 1px 2px rgba(0,0,0,.2);}
@@ -595,7 +609,7 @@
     <div class="card">
       <h3><span class="bar" style="background:var(--violet)"></span>我的补剂库<span class="sub" style="cursor:pointer;color:var(--teal-d)" onclick="openSuppSheet()">+ 新增</span></h3>
       <div id="suppLib"></div>
-      <p class="muted small">可自由增减补剂，并设置服用时机（如餐后、睡前）。</p>
+      <p class="muted small">可自由增减补剂，按 🌅 早上 / ☀️ 中午 / 🌙 晚上 三个时段管理，吃完在下方打卡勾选。</p>
     </div>
     <div class="card">
       <h3><span class="bar" style="background:var(--violet)"></span>今日服用打卡</h3>
@@ -910,9 +924,16 @@
     <h4>💊 新增 / 编辑补剂</h4>
     <label class="fld"><span class="lab">名称</span><input type="text" id="suppName" placeholder="如 鱼油" /></label>
     <label class="fld"><span class="lab">图标（emoji）</span><input type="text" id="suppIcon" placeholder="🐟" /></label>
+    <label class="fld"><span class="lab">服用时段</span>
+      <div class="seg" id="suppSlotSeg">
+        <button type="button" data-s="morning" class="on" onclick="setSuppSlot(this)">🌅 早上</button>
+        <button type="button" data-s="noon" onclick="setSuppSlot(this)">☀️ 中午</button>
+        <button type="button" data-s="evening" onclick="setSuppSlot(this)">🌙 晚上</button>
+      </div>
+    </label>
     <div class="row">
       <label class="fld"><span class="lab">剂量</span><input type="text" id="suppDose" placeholder="如 1粒 / 2000 IU" /></label>
-      <label class="fld"><span class="lab">服用时机</span><input type="text" id="suppTime" placeholder="如 早餐后 / 睡前" /></label>
+      <label class="fld"><span class="lab">备注（可选）</span><input type="text" id="suppTime" placeholder="如 早餐后 / 睡前" /></label>
     </div>
     <button class="btn violet" onclick="saveSupp()">保存补剂</button>
   </div>
@@ -959,6 +980,7 @@ function load(){
 }
 function migrate(s){
   s.foods = s.foods||[]; s.plans = s.plans||[]; s.supplements = s.supplements && s.supplements.length? s.supplements : defaultSupps();
+  s.supplements.forEach(x=>{ if(!x.slot) x.slot=guessSlot(x.time); }); // 老数据自动归入时段
   s.customActivities = s.customActivities||[]; s.customParts = s.customParts||[];
   s.customExercises = s.customExercises||[]; s.customExams = s.customExams||[];
   Object.keys(s.data||{}).forEach(k=>{ const d=s.data[k]; d.diet=d.diet||[]; d.ex=d.ex||[]; d.strength=d.strength||[]; d.exam=d.exam||{}; d.supps=d.supps||{}; d.water=d.water||0; });
@@ -966,12 +988,16 @@ function migrate(s){
 }
 function defaultSupps(){
   return [
-    {id:uid(),name:'鱼油',icon:'🐟',dose:'1 粒',time:'早餐后',def:true},
-    {id:uid(),name:'维生素D3',icon:'☀️',dose:'2000 IU',time:'早餐后',def:true},
-    {id:uid(),name:'复合维生素',icon:'💊',dose:'1 粒',time:'午餐后',def:true},
-    {id:uid(),name:'镁',icon:'🌿',dose:'200 mg',time:'睡前',def:true},
+    {id:uid(),name:'鱼油',icon:'🐟',dose:'1 粒',time:'早餐后',slot:'morning',def:true},
+    {id:uid(),name:'维生素D3',icon:'☀️',dose:'2000 IU',time:'早餐后',slot:'morning',def:true},
+    {id:uid(),name:'复合维生素',icon:'💊',dose:'1 粒',time:'午餐后',slot:'noon',def:true},
+    {id:uid(),name:'镁',icon:'🌿',dose:'200 mg',time:'睡前',slot:'evening',def:true},
   ];
 }
+/* 补剂时段：早 / 中 / 晚 */
+const SUPP_SLOTS=[{k:'morning',n:'早上',ic:'🌅'},{k:'noon',n:'中午',ic:'☀️'},{k:'evening',n:'晚上',ic:'🌙'}];
+function slotInfo(k){ return SUPP_SLOTS.find(s=>s.k===k)||SUPP_SLOTS[0]; }
+function guessSlot(t){ t=t||''; if(/晚|睡/.test(t)) return 'evening'; if(/午餐|中午|中饭|下午/.test(t)) return 'noon'; return 'morning'; }
 function save(){ localStorage.setItem(LS_KEY, JSON.stringify(state)); }
 function todayStr(){ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
 function getDay(date){ if(!state.data[date]) state.data[date]={weight:null,bodyFat:null,waist:null,exam:{},diet:[],ex:[],strength:[],supps:{},water:0}; return state.data[date]; }
@@ -1400,10 +1426,14 @@ function renderTodaySupp(){
     document.getElementById('todaySuppBody').innerHTML='<div class="minicard"><div class="mi" style="background:#dcfce7">✅</div><div class="mt"><div class="h">今日补剂已全部服用</div><div class="d">坚持就是胜利</div></div></div>';
     return;
   }
-  document.getElementById('todaySuppBody').innerHTML = pending.map(s=>
-    `<div class="minicard"><div class="mi" style="background:#f3e8ff">${s.icon||'💊'}</div>
-     <div class="mt"><div class="h">${esc(s.name)}</div><div class="d">${esc(s.dose||'')} · ${esc(s.time||'')}</div></div>
-     <div class="toggle" onclick="toggleSuppToday('${s.id}')"></div></div>`).join('');
+  document.getElementById('todaySuppBody').innerHTML = SUPP_SLOTS.map(sl=>{
+    const arr=pending.filter(s=>(s.slot||'morning')===sl.k);
+    if(!arr.length) return '';
+    return `<div class="slot-h sm">${sl.ic} ${sl.n}</div>`+arr.map(s=>
+      `<div class="minicard" onclick="toggleSuppToday('${s.id}')" style="cursor:pointer"><div class="mi" style="background:#f3e8ff">${s.icon||'💊'}</div>
+       <div class="mt"><div class="h">${esc(s.name)}</div><div class="d">${esc(s.dose||'')}${s.time?' · '+esc(s.time):''}</div></div>
+       <div class="chk"></div></div>`).join('');
+  }).join('');
 }
 function renderAdvice(d,plan,intake,pI,cI,fI,exBurn){
   const ul=document.getElementById('adviceList'); ul.innerHTML='';
@@ -2452,13 +2482,24 @@ function renderExamSummary(){
 }
 
 /* ============ 补充剂 ============ */
+function suppsBySlot(){
+  const g={morning:[],noon:[],evening:[]};
+  state.supplements.forEach(s=>{ (g[s.slot]||g.morning).push(s); });
+  return g;
+}
 function renderSupps(){
   const box=document.getElementById('suppLib');
   if(!state.supplements.length){ box.innerHTML='<div class="empty">还没有补剂，点右上「+ 新增」</div>'; return; }
-  box.innerHTML=state.supplements.map(s=>`<div class="supp"><div class="ic">${s.icon||'💊'}</div>
-    <div class="info"><div class="n">${esc(s.name)}</div><div class="d">${esc(s.dose||'')} · ${esc(s.time||'')}</div></div>
-    <span class="del" onclick="editSupp('${s.id}')">✎</span>
-    <span class="del" onclick="delSupp('${s.id}')">🗑</span></div>`).join('');
+  const g=suppsBySlot();
+  box.innerHTML=SUPP_SLOTS.map(sl=>{
+    const arr=g[sl.k];
+    if(!arr.length) return '';
+    return `<div class="slot-h">${sl.ic} ${sl.n}<span class="slot-cnt">${arr.length} 种</span></div>`+
+      arr.map(s=>`<div class="supp"><div class="ic">${s.icon||'💊'}</div>
+      <div class="info"><div class="n">${esc(s.name)}</div><div class="d">${esc(s.dose||'')}${s.time?' · '+esc(s.time):''}</div></div>
+      <span class="del" onclick="editSupp('${s.id}')">✎</span>
+      <span class="del" onclick="delSupp('${s.id}')">🗑</span></div>`).join('');
+  }).join('');
   renderSuppToday();
 }
 function openSuppSheet(id){
@@ -2467,13 +2508,17 @@ function openSuppSheet(id){
   document.getElementById('suppIcon').value=s?s.icon:'💊';
   document.getElementById('suppDose').value=s?s.dose:'';
   document.getElementById('suppTime').value=s?s.time:'';
+  const slot=s?(s.slot||'morning'):'morning';
+  document.querySelectorAll('#suppSlotSeg button').forEach(b=>b.classList.toggle('on',b.dataset.s===slot));
   document.getElementById('suppMask').dataset.id=id||'';
   document.getElementById('suppMask').classList.add('show');
 }
+function setSuppSlot(btn){ document.querySelectorAll('#suppSlotSeg button').forEach(b=>b.classList.remove('on')); btn.classList.add('on'); }
 function saveSupp(){
   const name=document.getElementById('suppName').value.trim(); if(!name){ toast('请填写名称'); return; }
   const id=document.getElementById('suppMask').dataset.id;
-  const data={name,icon:document.getElementById('suppIcon').value||'💊',dose:document.getElementById('suppDose').value,time:document.getElementById('suppTime').value};
+  const slotBtn=document.querySelector('#suppSlotSeg button.on');
+  const data={name,icon:document.getElementById('suppIcon').value||'💊',dose:document.getElementById('suppDose').value,time:document.getElementById('suppTime').value,slot:slotBtn?slotBtn.dataset.s:'morning'};
   if(id){ const s=state.supplements.find(x=>x.id===id); Object.assign(s,data); }
   else state.supplements.push({id:uid(),...data});
   save(); closeSheet('suppMask'); renderSupps(); toast('已保存');
@@ -2486,18 +2531,44 @@ function renderSuppToday(){
   const d=getDay(date);
   const box=document.getElementById('suppToday');
   if(!state.supplements.length){ box.innerHTML='<div class="empty">还没有补剂，去上方添加</div>'; return; }
-  box.innerHTML=state.supplements.map(s=>{
-    const on=!!d.supps[s.id];
-    return `<div class="supp"><div class="ic">${s.icon||'💊'}</div>
-      <div class="info"><div class="n">${esc(s.name)} ${on?'<span class="tag">已服</span>':''}</div><div class="d">${esc(s.dose||'')} · ${esc(s.time||'')}</div></div>
-      <div class="toggle ${on?'on':''}" onclick="toggleSuppToday('${s.id}')"></div></div>`;
+  const g=suppsBySlot();
+  const total=state.supplements.length;
+  const done=state.supplements.filter(s=>d.supps[s.id]).length;
+  const pct=total?Math.round(done/total*100):0;
+  let html=`<div class="supp-prog"><div class="sp-txt">当日完成 <b>${done}/${total}</b>${done===total&&total>0?' · 全部完成 🎉':''}</div><div class="sp-bar"><i style="width:${pct}%"></i></div></div>`;
+  html+=SUPP_SLOTS.map(sl=>{
+    const arr=g[sl.k];
+    if(!arr.length) return '';
+    const slDone=arr.filter(s=>d.supps[s.id]).length;
+    const allDone=slDone===arr.length;
+    return `<div class="slot-h">${sl.ic} ${sl.n}<span class="slot-cnt ${allDone?'ok':''}">${allDone?'✓ 已完成':slDone+'/'+arr.length}</span></div>`+
+      arr.map(s=>{
+        const on=!!d.supps[s.id];
+        return `<div class="supp ${on?'done':''}" onclick="toggleSuppToday('${s.id}')" style="cursor:pointer">
+          <div class="ic">${s.icon||'💊'}</div>
+          <div class="info"><div class="n">${esc(s.name)}</div><div class="d">${esc(s.dose||'')}${s.time?' · '+esc(s.time):''}</div></div>
+          <div class="chk ${on?'on':''}">${on?'✓':''}</div></div>`;
+      }).join('');
   }).join('');
+  box.innerHTML=html;
 }
 function toggleSuppToday(id){
   const date=document.getElementById('suppDate').value||todayStr();
   const d=getDay(date);
+  const checking=!d.supps[id];
   if(d.supps[id]) delete d.supps[id]; else d.supps[id]=true;
   save(); renderSuppToday(); renderToday();
+  if(checking){
+    const s=state.supplements.find(x=>x.id===id);
+    if(s){
+      const sl=slotInfo(s.slot);
+      const slotArr=state.supplements.filter(x=>(x.slot||'morning')===(s.slot||'morning'));
+      const slotAll=slotArr.every(x=>d.supps[x.id]);
+      const all=state.supplements.every(x=>d.supps[x.id]);
+      if(all) toast('🎉 当日补剂全部完成！');
+      else if(slotAll) toast(sl.ic+' '+sl.n+'补剂已全部完成');
+    }
+  }
 }
 function scheduleSuppReminders(){
   if(!('Notification' in window)){ toast('当前浏览器不支持通知，请手动打卡'); return; }
@@ -2506,7 +2577,7 @@ function scheduleSuppReminders(){
     const pending=state.supplements;
     toast('已设置提醒，将在页面打开时提示');
     pending.forEach((s,i)=>{
-      setTimeout(()=>{ try{ new Notification('💊 补剂提醒',{body:`该服用 ${s.name}（${s.dose||''} · ${s.time||''}）`}); }catch(e){} }, 4000+i*1500);
+      setTimeout(()=>{ try{ const sl=slotInfo(s.slot); new Notification('💊 补剂提醒',{body:`${sl.ic} ${sl.n} · 该服用 ${s.name}（${s.dose||''}）`}); }catch(e){} }, 4000+i*1500);
     });
   });
 }
