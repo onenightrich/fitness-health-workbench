@@ -1085,8 +1085,8 @@ function fmtMMSS(s){ const m=Math.floor(s/60), ss=s%60; return String(m).padStar
    正文偏短的文章在打开时经 r.jina.ai 阅读代理自动抓取完整正文；
    实时不足 10 篇时用内置完整长文库补齐（离线也可读全文）。 */
 const NEWS_FEEDS = [
-  // 健康健身：Google 新闻中文检索（标题源，打开时自动抓全文）
-  {key:'health1', cat:'health', rss:'https://news.google.com/rss/search?q='+encodeURIComponent('健身 OR 减脂 OR 运动营养 OR 运动健康')+'&hl=zh-CN&gl=CN&ceid=CN:zh-Hans', take:12},
+  // 健康健身：Google 新闻「健康」主题实时频道（中文版，官方 curated 实时源）
+  {key:'health1', cat:'health', rss:'https://news.google.com/rss/headlines/section/topic/HEALTH?hl=zh-CN&gl=CN&ceid=CN:zh-Hans', take:12},
   // 科技前沿：36氪 / 爱范儿（RSS 自带全文）
   {key:'tech1', cat:'tech', rss:'https://36kr.com/feed', take:8},
   {key:'tech2', cat:'tech', rss:'https://www.ifanr.com/feed', take:8},
