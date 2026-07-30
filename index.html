@@ -377,6 +377,32 @@
   .btn:active,.wbtn:active,.sdel:active,.qrow .qcard:active{transform:none;}
   .tab,.tab .ic,.card,.newsitem{transition:none;}
 }
+/* ===== 训练分析 · 渐进超负荷 ===== */
+.an-sum{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;margin-bottom:14px;}
+.an-stat{background:var(--card2);border-radius:12px;padding:10px 12px;}
+.an-stat .v{font-size:19px;font-weight:800;color:var(--txt);font-family:var(--mono);line-height:1.1;}
+.an-stat .l{font-size:11.5px;color:var(--sub);margin-top:2px;}
+.an-stat.hl{background:linear-gradient(135deg,rgba(194,65,12,.14),rgba(194,65,12,.04));}
+.an-stat.hl .v{color:var(--accent);}
+.an-list{display:flex;flex-direction:column;gap:9px;}
+.an-item{display:flex;align-items:center;gap:10px;padding:11px 12px;border-radius:13px;background:var(--card);border:1px solid var(--line2);box-shadow:var(--shadow-2xs);cursor:pointer;}
+.an-item:active{transform:scale(.99);}
+.an-item .an-n{font-size:14.5px;font-weight:700;color:var(--txt);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.an-item .an-meta{display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex:none;}
+.an-item .an-pr{font-size:13px;font-weight:800;color:var(--good);font-family:var(--mono);}
+.an-item .an-sub{font-size:11px;color:var(--sub);}
+.an-spark{width:74px;height:30px;flex:none;}
+.an-badge{display:inline-block;font-size:10px;font-weight:800;color:#fff;background:var(--accent);border-radius:6px;padding:1px 5px;margin-left:5px;vertical-align:middle;}
+.an-dsec{margin:14px 0 6px;font-size:13px;font-weight:800;color:var(--sub);}
+.an-chart{width:100%;height:auto;background:var(--card2);border-radius:12px;padding:8px;margin:6px 0 4px;}
+.an-kv{width:100%;border-collapse:collapse;font-size:13px;margin-top:6px;}
+.an-kv td{padding:7px 6px;border-bottom:1px solid var(--line);}
+.an-kv td:first-child{color:var(--sub);}
+.an-kv td:last-child{text-align:right;font-weight:700;color:var(--txt);font-family:var(--mono);}
+.an-prrow.new{background:rgba(21,128,61,.1);}
+.an-prrow.new td:last-child{color:var(--good);}
+.an-tip{font-size:12px;color:var(--sub);line-height:1.5;margin:8px 0;}
+.tplast{font-size:11px;color:var(--sub);font-weight:500;margin-left:6px;}
 </style>
 </head>
 <body>
@@ -542,6 +568,13 @@
     <div class="card">
       <h3><span class="bar" style="background:var(--indigo)"></span>力量训练记录</h3>
       <div id="strengthList"></div>
+    </div>
+
+    <div class="card">
+      <h3><span class="bar" style="background:var(--accent)"></span>📈 训练分析 · 渐进超负荷 <span class="sub" onclick="renderAnalysis()" style="cursor:pointer;color:var(--accent)">↻ 刷新</span></h3>
+      <div class="an-sum" id="anSummary"></div>
+      <div class="an-list" id="anList"></div>
+      <div class="muted small" style="margin-top:8px">点任意动作查看重量 / 容量 / 估 1RM 的完整趋势与历史 PR。数据全部来自你已保存的力量训练记录。</div>
     </div>
 
     <div class="card">
@@ -866,6 +899,15 @@
       <button class="btn ghost" onclick="closeSheet('trainStartMask')">取消</button>
       <button class="btn" onclick="confirmStartTrainParams()">开始计时训练 ▶</button>
     </div>
+  </div>
+</div>
+
+<!-- Exercise Analysis Detail Sheet -->
+<div class="mask" id="anDetailMask">
+  <div class="sheet" style="max-width:540px">
+    <span class="close" onclick="closeSheet('anDetailMask')">×</span>
+    <h4 id="anDetailTitle">动作进度</h4>
+    <div id="anDetailBody"></div>
   </div>
 </div>
 
@@ -1684,7 +1726,169 @@ function renderEx(){
   const sl=document.getElementById('strengthList');
   if(!d.strength.length){ sl.innerHTML='<div class="empty">还没有力量训练，选择上方计划「开始训练」</div>'; }
   else sl.innerHTML=d.strength.map(s=>`<div class="plan"><div class="ph"><b>${esc(s.planName||'力量')}</b><span class="muted small" style="margin-left:auto">${s.exercises.length}动作 · ${s.setsCount}组 · ${fmtMMSS(s.duration||0)}</span><span class="del" onclick="delStrength('${s.id}')">🗑</span></div><div class="exmini">${s.exercises.map(e=>e.name+' '+e.sets.length+'×'+(e.sets[0]?e.sets[0].weight:'-')+'kg').join('，')}</div></div>`).join('');
-  renderPlanSelect(); renderPlanLib(); calRefresh('exercise');
+  renderPlanSelect(); renderPlanLib(); calRefresh('exercise'); renderAnalysis();
+}
+/* ============ 训练分析 · 渐进超负荷（Route A） ============ */
+let AN_LIST=[];
+function estOneRm(w,r){
+  w=+w||0; r=+r||0;
+  if(!w||!r||r>15) return 0;            // 1RM 估算在 ≤15 次内较可靠
+  const epley=w*(1+r/30);
+  const brz=w/(1.0278-0.0278*r);
+  return Math.round(Math.min(epley,brz));
+}
+function niceCeil(v){
+  if(v<=0) return 1;
+  const mag=Math.pow(10,Math.floor(Math.log10(v)));
+  const n=v/mag;
+  const step=n<=1?1:n<=2?2:n<=5?5:10;
+  return step*mag;
+}
+/* 聚合所有力量训练记录，得到每个动作的历史、PR、估 1RM、上次数值 */
+function exerciseHistory(){
+  const map={};
+  Object.keys(state.data).sort().forEach(date=>{
+    const d=state.data[date];
+    if(!d||!d.strength||!d.strength.length) return;
+    d.strength.forEach(sess=>{
+      (sess.exercises||[]).forEach(ex=>{
+        const key=ex.name; if(!key) return;
+        if(!map[key]) map[key]={name:key, nameCn:'', sessions:0, sets:[], lastSession:null};
+        const e=map[key];
+        e.nameCn=ex.nameCn||e.nameCn||'';
+        e.sessions++;
+        const sessSets=(ex.sets||[]).map(s=>({weight:+s.weight||0,reps:+s.reps||0}));
+        e.lastSession={date, sets:sessSets};
+        sessSets.forEach(s=>{
+          e.sets.push({date, weight:s.weight, reps:s.reps, volume:s.weight*s.reps, oneRm:estOneRm(s.weight,s.reps)});
+        });
+      });
+    });
+  });
+  Object.values(map).forEach(e=>{
+    e.sets.sort((a,b)=>a.date<b?-1:1);
+    e.bestWeight=Math.max(0,...e.sets.map(s=>s.weight));
+    e.bestVolume=Math.max(0,...e.sets.map(s=>s.volume));
+    e.bestOneRm=Math.max(0,...e.sets.map(s=>s.oneRm));
+    const byDate={};
+    e.sets.forEach(s=>{
+      if(!byDate[s.date]) byDate[s.date]={date:s.date, maxWeight:0, totalVolume:0, oneRm:0};
+      const g=byDate[s.date];
+      g.maxWeight=Math.max(g.maxWeight,s.weight);
+      g.totalVolume+=s.volume;
+      g.oneRm=Math.max(g.oneRm,s.oneRm);
+    });
+    e.sessionsData=Object.values(byDate).sort((a,b)=>a.date<b?-1:1);
+    const lastSess=e.sessionsData[e.sessionsData.length-1];
+    e.lastSess = lastSess ? {date:lastSess.date, maxWeight:lastSess.maxWeight, sets: e.lastSession?e.lastSession.sets:[]} : null;
+    e.lastDate=e.lastSess?e.lastSess.date:null;
+    const priorMax=lastSess?Math.max(0,...e.sessionsData.slice(0,-1).map(g=>g.maxWeight)):0;
+    e.isNewRecord=lastSess && e.sessions>1 && lastSess.maxWeight>0 && lastSess.maxWeight>priorMax;
+  });
+  return map;
+}
+/* 本周 / 本月 训练次数与总容量（吨） */
+function volumeSummary(){
+  const now=new Date();
+  const wkStart=new Date(now); wkStart.setDate(now.getDate()-now.getDay()); wkStart.setHours(0,0,0,0);
+  const moStart=new Date(now.getFullYear(),now.getMonth(),1);
+  let wS=0,wV=0,mS=0,mV=0;
+  Object.keys(state.data).forEach(date=>{
+    const d=state.data[date]; if(!d||!d.strength||!d.strength.length) return;
+    const dt=new Date(date+'T00:00:00');
+    const vol=d.strength.reduce((s,x)=>s+(x.volume||0),0);
+    const cnt=d.strength.length;
+    if(dt>=wkStart){ wS+=cnt; wV+=vol; }
+    if(dt>=moStart){ mS+=cnt; mV+=vol; }
+  });
+  return {wS,wV,mS,mV};
+}
+function renderAnalysis(){
+  const map=exerciseHistory();
+  const list=Object.values(map).sort((a,b)=>b.bestOneRm-a.bestOneRm);
+  AN_LIST=list;
+  const sum=document.getElementById('anSummary');
+  const vs=volumeSummary();
+  const exCount=list.length;
+  sum.innerHTML=
+    `<div class="an-stat"><div class="v">${exCount}</div><div class="l">追踪动作数</div></div>`+
+    `<div class="an-stat"><div class="v">${vs.wS}</div><div class="l">本周训练次数</div></div>`+
+    `<div class="an-stat"><div class="v">${(vs.wV/1000).toFixed(1)}t</div><div class="l">本周总容量</div></div>`+
+    `<div class="an-stat hl"><div class="v">${(vs.mV/1000).toFixed(1)}t</div><div class="l">本月总容量</div></div>`;
+  const box=document.getElementById('anList');
+  if(!exCount){ box.innerHTML='<div class="empty">还没有力量训练记录，完成一次训练后这里会显示你的进步曲线。</div>'; return; }
+  box.innerHTML=list.map((e,i)=>{
+    const disp=e.nameCn||e.name;
+    const spark=svgSparkline(e.sets.map(s=>s.weight));
+    const last=e.lastSess?`上次 ${e.lastSess.maxWeight}×${e.lastSess.sets.length?e.lastSess.sets[e.lastSess.sets.length-1].reps:'-'}（${e.lastDate.slice(5)}）`:'—';
+    const badge=e.isNewRecord?'<span class="an-badge">新纪录</span>':'';
+    return `<div class="an-item" onclick="openExAnalysis(${i})">
+      <div style="flex:1;min-width:0">
+        <div class="an-n">${esc(disp)}${badge}</div>
+        <div class="an-sub">${last} · ${e.sessions}次训练</div>
+      </div>
+      ${spark}
+      <div class="an-meta"><div class="an-pr">${e.bestWeight}kg</div><div class="an-sub">最佳</div></div>
+    </div>`;
+  }).join('');
+}
+function openExAnalysis(i){
+  const e=AN_LIST[i]; if(!e) return;
+  document.getElementById('anDetailTitle').textContent=(e.nameCn||e.name)+' · 进度分析';
+  const last=e.lastSess?`${e.lastSess.maxWeight}kg（${e.lastDate}）`:'—';
+  const wChart=svgLineChart(e.sessionsData.map(g=>g.maxWeight),{label:'单次最大重量 (kg)',color:'#c2410c',dates:e.sessionsData.map(g=>g.date)});
+  const vChart=svgLineChart(e.sessionsData.map(g=>Math.round(g.totalVolume)),{label:'单次总容量 (kg)',color:'#0369a1',dates:e.sessionsData.map(g=>g.date)});
+  const oChart=svgLineChart(e.sessionsData.map(g=>g.oneRm),{label:'估算 1RM (kg)',color:'#15803d',dates:e.sessionsData.map(g=>g.date),min0:true});
+  const topSets=e.sets.slice().sort((a,b)=>b.weight-a.weight||b.oneRm-a.oneRm).slice(0,6);
+  document.getElementById('anDetailBody').innerHTML=
+    `<div class="an-tip">共 <b>${e.sessions}</b> 次训练、<b>${e.sets.length}</b> 组记录。最佳重量 <b>${e.bestWeight}kg</b>，估 1RM 约 <b>${e.bestOneRm}kg</b>，单次最大容量 <b>${e.bestVolume}kg</b>。${e.isNewRecord?'<br>🎉 最近一次训练刷新了最大重量纪录！':''}</div>`+
+    `<div class="an-dsec">单次最大重量趋势</div>${wChart}`+
+    `<div class="an-dsec">单次总容量趋势</div>${vChart}`+
+    `<div class="an-dsec">估算 1RM 趋势（Epley / Brzycki）</div>${oChart}`+
+    `<div class="an-dsec">历史最佳组（按重量）</div><table class="an-kv"><tr><td>日期</td><td>重量 × 次数</td><td>容量</td><td>估1RM</td></tr>`+
+    topSets.map(s=>`<tr class="${e.isNewRecord&&s.date===e.lastDate&&s.weight===e.bestWeight?'new':''}"><td>${s.date.slice(5)}</td><td>${s.weight}×${s.reps}</td><td>${s.volume}</td><td>${s.oneRm||'-'}</td></tr>`).join('')+
+    `</table>`;
+  document.getElementById('anDetailMask').classList.add('show');
+}
+function svgSparkline(vals){
+  if(!vals||!vals.length) return '<svg class="an-spark" viewBox="0 0 74 30"></svg>';
+  const w=74,h=30,pad=3;
+  const max=Math.max(...vals,1), min=Math.min(...vals,0), range=(max-min)||1, n=vals.length;
+  const pts=vals.map((v,i)=>{
+    const x=n===1?w/2:(pad+i*(w-2*pad)/(n-1));
+    const y=h-pad-(v-min)/range*(h-2*pad);
+    return x.toFixed(1)+','+y.toFixed(1);
+  }).join(' ');
+  const col=vals[vals.length-1]>=vals[0]?'#15803d':'#b91c1c';
+  return `<svg class="an-spark" viewBox="0 0 ${w} ${h}"><polyline points="${pts}" fill="none" stroke="${col}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/></svg>`;
+}
+function svgLineChart(vals, opts){
+  opts=opts||{};
+  const color=opts.color||'#c2410c', unit=opts.unit||'', w=480,h=180,pl=38,pr=12,pt=16,pb=24;
+  if(!vals||!vals.length) return '<svg class="an-chart" viewBox="0 0 '+w+' '+h+'"></svg>';
+  const n=vals.length;
+  const max=Math.max(...vals,1), niceMax=niceCeil(max);
+  const ymin=opts.min0?0:Math.min(0,Math.min(...vals));
+  const X=i=>pl+(n===1?(w-pl-pr)/2:i*(w-pl-pr)/(n-1));
+  const Y=v=>(h-pb)-(v-ymin)/((niceMax||1)-ymin)*((h-pb)-pt);
+  let grid='';
+  for(let g=0;g<=4;g++){
+    const val=ymin+(niceMax-ymin)*g/4, yy=Y(val);
+    grid+=`<line x1="${pl}" y1="${yy}" x2="${w-pr}" y2="${yy}" stroke="#e7e2da" stroke-width="1"/>`+
+          `<text x="${pl-5}" y="${yy+3}" text-anchor="end" font-size="9" fill="#9a948b">${Math.round(val)}</text>`;
+  }
+  let xlab='';
+  const idxs=n===1?[0]:[0,Math.floor((n-1)/2),n-1];
+  idxs.forEach(i=>{
+    const dt=(opts.dates&&opts.dates[i])?opts.dates[i].slice(5):('#'+(i+1));
+    xlab+=`<text x="${X(i)}" y="${h-pb+14}" text-anchor="middle" font-size="9" fill="#9a948b">${dt}</text>`;
+  });
+  const pts=vals.map((v,i)=>X(i)+','+Y(v)).join(' ');
+  const poly=`<polygon points="${X(0)},${h-pb} ${pts} ${X(n-1)},${h-pb}" fill="${color}1a"/>`;
+  const line=`<polyline points="${pts}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linejoin="round"/>`;
+  const dots=vals.map((v,i)=>`<circle cx="${X(i)}" cy="${Y(v)}" r="2.6" fill="${color}"/>`).join('');
+  return `<svg class="an-chart" viewBox="0 0 ${w} ${h}" preserveAspectRatio="xMidYMid meet">${grid}${poly}${line}${dots}${xlab}`+
+         `<text x="${pl}" y="11" font-size="10" fill="${color}" font-weight="700">${opts.label||''}</text></svg>`;
 }
 /* ============ 通用自然月日历 ============ */
 let CAL=null;
@@ -2035,12 +2239,20 @@ function startTrainingFromSelect(){
 function openStartTrainParams(planId){
   const plan=state.plans.find(p=>p.id===planId); if(!plan||!plan.exercises.length){ toast('该计划没有动作'); return; }
   startTrainPlanId=planId;
+  const hist=exerciseHistory();
   const list=document.getElementById('trainParamList');
-  list.innerHTML=plan.exercises.map((ex,i)=>`<div class="tparam"><div class="tpname">${i+1}. ${esc(ex.nameCn||ex.name)}</div><div class="row">
+  list.innerHTML=plan.exercises.map((ex,i)=>{
+    const h=hist[ex.name];
+    const last=h&&h.lastSess?h.lastSess:null;
+    const lw=last&&last.sets.length?last.sets[last.sets.length-1].weight:0;
+    const lr=last&&last.sets.length?last.sets[last.sets.length-1].reps:12;
+    const hint=last?`<span class="tplast">上次 ${lw}×${lr}（${last.date.slice(5)}）</span>`:'<span class="tplast">暂无记录</span>';
+    return `<div class="tparam"><div class="tpname">${i+1}. ${esc(ex.nameCn||ex.name)} ${hint}</div><div class="row">
       <label class="fld"><span class="lab">组数</span><input type="number" id="tpSets_${i}" value="3" min="1"/></label>
-      <label class="fld"><span class="lab">重量 kg</span><input type="number" id="tpWeight_${i}" value="0" /></label>
-      <label class="fld"><span class="lab">次数</span><input type="number" id="tpReps_${i}" value="12" /></label>
-    </div></div>`).join('');
+      <label class="fld"><span class="lab">重量 kg</span><input type="number" id="tpWeight_${i}" value="${lw}" /></label>
+      <label class="fld"><span class="lab">次数</span><input type="number" id="tpReps_${i}" value="${lr}" /></label>
+    </div></div>`;
+  }).join('');
   document.getElementById('tpRest').value=60;
   document.getElementById('trainStartMask').classList.add('show');
 }
@@ -2179,7 +2391,7 @@ function finishTraining(){
   const date=T.date; const d=getDay(date);
   const doneEx=T.logs.filter(ex=>ex.sets.some(s=>s.done));
   if(!doneEx.length){ toast('没有完成的组'); return; }
-  const exercises=doneEx.map(ex=>({name:ex.name,part:ex.part,sets:ex.sets.filter(s=>s.done).map(s=>({weight:s.weight,reps:s.reps}))}));
+  const exercises=doneEx.map(ex=>({name:ex.name,nameCn:ex.nameCn||'',part:ex.part,sets:ex.sets.filter(s=>s.done).map(s=>({weight:s.weight,reps:s.reps}))}));
   const setsCount=exercises.reduce((s,e)=>s+e.sets.length,0);
   const volume=exercises.reduce((s,e)=>s+e.sets.reduce((a,st)=>a+st.weight*st.reps,0),0);
   const duration=Math.floor((Date.now()-T.startedAt)/1000);
