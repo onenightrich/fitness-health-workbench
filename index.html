@@ -183,6 +183,9 @@
   .banner{background:var(--accent-soft);border:1px solid rgba(194,65,12,.25);color:var(--accent-d);border-radius:12px;padding:11px 13px;font-size:13px;margin-bottom:14px;line-height:1.6;}
   .empty{text-align:center;color:var(--sub);font-size:13px;padding:26px 0;}
   .navbtns{display:flex;gap:10px;margin-top:4px;flex-wrap:wrap;}
+  .snap-list{display:flex;flex-direction:column;gap:8px;margin-top:2px;}
+  .snap-item{display:flex;justify-content:space-between;align-items:center;gap:10px;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:8px 10px;}
+  .snap-item .btn.sm{padding:5px 12px;font-size:12px;}
   .small{font-size:12px;}
   .pill{font-size:11px;color:var(--sub);background:var(--card2);border-radius:8px;padding:3px 8px;font-weight:600;border:1px solid var(--line);}
   .kv{width:100%;font-size:13px;border-collapse:collapse;}
@@ -709,14 +712,41 @@
 
     <div class="card">
       <h3><span class="bar" style="background:var(--red)"></span>数据管理</h3>
+      <p class="muted small" style="margin-bottom:10px">数据仅保存在本机浏览器，不会上传。建议定期导出备份；导入前会自动创建本地快照，可随时回滚。iOS 可在 Safari 中「添加到主屏幕」当 App 使用。</p>
       <div class="navbtns">
-        <button class="btn ghost sm" onclick="exportData()">导出备份</button>
-        <button class="btn ghost sm" onclick="importData()">导入恢复</button>
+        <button class="btn ghost sm" onclick="exportData()">导出完整备份</button>
+        <button class="btn ghost sm" onclick="exportTrainCSV()">导出训练CSV</button>
+        <button class="btn ghost sm" onclick="exportBodyCSV()">导出体重CSV</button>
+        <button class="btn ghost sm" onclick="importData()">导入备份</button>
       </div>
-      <input type="file" id="fileInput" accept="application/json" style="display:none" onchange="doImport(event)" />
+      <input type="file" id="fileInput" accept="application/json,.json" style="display:none" onchange="doImport(event)" />
+      <div class="hr" style="height:1px;background:var(--line);margin:12px 0"></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <span class="muted small" style="font-weight:600">本地快照（防误操作）</span>
+        <button class="btn ghost sm" onclick="takeSnapshot('手动')">＋ 创建快照</button>
+      </div>
+      <div id="snapList" class="snap-list"></div>
       <div class="hr" style="height:1px;background:var(--line);margin:12px 0"></div>
       <button class="btn danger" onclick="resetAll()">清空所有数据</button>
-      <p class="muted small" style="margin-top:10px">数据仅保存在本机浏览器（localStorage），不会上传。建议定期导出备份。iOS 可在 Safari 中「添加到主屏幕」当 App 使用。</p>
+    </div>
+
+    <!-- 导入预览 / 确认 -->
+    <div class="mask" id="importMask">
+      <div class="sheet">
+        <h3 style="margin-bottom:6px">导入备份确认</h3>
+        <div id="importInfo" class="muted small" style="margin-bottom:10px;line-height:1.7"></div>
+        <label class="fld"><span class="lab">处理方式</span>
+          <select id="importMode" style="padding:9px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:inherit;font-family:inherit;width:100%">
+            <option value="replace">替换全部（覆盖当前数据）</option>
+            <option value="merge">合并（按日期/ID 合并，保留双方记录）</option>
+          </select>
+        </label>
+        <p class="muted small" id="importWarn" style="margin:8px 0 12px;color:var(--red)"></p>
+        <div class="navbtns">
+          <button class="btn danger" onclick="applyImport()">确认导入</button>
+          <button class="btn ghost" onclick="closeSheet('importMask')">取消</button>
+        </div>
+      </div>
     </div>
   </section>
 
@@ -2822,6 +2852,7 @@ function renderMe(){
       <tr><td>预计每周减重</td><td>≈ ${plan.weeklyLoss.toFixed(2)} kg</td></tr>
       <tr><td>预计达成目标</td><td>${etaText(plan)}</td></tr>
     </table>` : '<div class="empty">填写资料后显示专属方案</div>';
+  renderSnaps();
 }
 function etaText(plan){
   const p=state.profile; const diff=p.weight-p.target; if(diff<=0) return '已达标 🎉';
@@ -2846,18 +2877,133 @@ function savePlan(){
   if(p.macroP+p.macroC+p.macroF!==100){ toast('三大营养素比例需合计 100%'); return; }
   save(); toast('规划已保存'); renderMe(); renderToday();
 }
-function exportData(){
-  const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
-  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
-  a.download='FitPulse备份_'+todayStr()+'.json'; a.click(); toast('已导出');
+/* ============ 数据管理（Route E） ============ */
+const SNAP_KEY='health_workbench_snaps';
+const APP_VER=2; // 与数据 schema 版本对应
+
+function dataCounts(s){
+  s=s||state;
+  return {days:Object.keys(s.data||{}).length, plans:(s.plans||[]).length, supplements:(s.supplements||[]).length,
+    foods:(s.foods||[]).length, customExercises:(s.customExercises||[]).length, customExams:(s.customExams||[]).length,
+    customParts:(s.customParts||[]).length, customActivities:(s.customActivities||[]).length};
 }
+
+function exportData(){
+  const counts=dataCounts();
+  const payload={app:'FitPulse', version:APP_VER, exportedAt:new Date().toISOString(), schema:'health_workbench_v2', counts, state};
+  const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  const d=new Date(); const ts=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}_${String(d.getHours()).padStart(2,'0')}${String(d.getMinutes()).padStart(2,'0')}`;
+  a.download='FitPulse备份_'+ts+'.json'; a.click(); URL.revokeObjectURL(a.href);
+  toast('已导出备份（'+counts.days+' 天数据）');
+}
+
+function csvCell(v){ v=v==null?'':String(v); return /[",\n\r]/.test(v)? '"'+v.replace(/"/g,'""')+'"' : v; }
+function downloadText(text,filename,mime){
+  const blob=new Blob(['﻿'+text],{type:mime||'text/plain;charset=utf-8'}); // 前置 BOM，Excel 中文不乱码
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=filename; a.click(); URL.revokeObjectURL(a.href);
+}
+function exportTrainCSV(){
+  const rows=[['日期','计划','动作(中文)','动作(英文)','组号','重量kg','次数','容量kg','是否完成','训练时长s','热量kcal']];
+  Object.keys(state.data||{}).sort().forEach(ds=>{ (state.data[ds].strength||[]).forEach(sess=>{
+    (sess.exercises||[]).forEach(ex=>{ (ex.sets||[]).forEach((st,si)=>{
+      const w=st.weight||0, r=st.reps||0;
+      rows.push([ds, sess.planName||'', ex.nameCn||ex.name||'', ex.name||'', si+1, w, r, (w*r)||0, st.done?'是':'否', sess.duration||0, sess.kcal||0]);
+    });});
+  });});
+  if(rows.length===1){ toast('暂无训练数据可导出'); return; }
+  downloadText(rows.map(r=>r.map(csvCell).join(',')).join('\n'),'FitPulse训练数据_'+todayStr()+'.csv','text/csv;charset=utf-8');
+  toast('已导出训练 CSV（'+(rows.length-1)+' 组）');
+}
+function exportBodyCSV(){
+  const rows=[['日期','体重kg','体脂%','腰围cm']];
+  Object.keys(state.data||{}).sort().forEach(ds=>{ const d=state.data[ds];
+    if(d.weight!=null||d.bodyFat!=null||d.waist!=null) rows.push([ds, d.weight??'', d.bodyFat??'', d.waist??'']); });
+  if(rows.length===1){ toast('暂无身体数据可导出'); return; }
+  downloadText(rows.map(r=>r.map(csvCell).join(',')).join('\n'),'FitPulse体重数据_'+todayStr()+'.csv','text/csv;charset=utf-8');
+  toast('已导出体重 CSV（'+(rows.length-1)+' 天）');
+}
+
+/* 本地快照：防误操作的版本化备份 */
+function takeSnapshot(label){
+  let snaps=[]; try{ snaps=JSON.parse(localStorage.getItem(SNAP_KEY)||'[]'); }catch(e){}
+  snaps.push({id:uid(), ts:new Date().toISOString(), label:label||'自动', state:JSON.parse(JSON.stringify(state))});
+  snaps=snaps.slice(-10); // 仅保留最近 10 个
+  localStorage.setItem(SNAP_KEY,JSON.stringify(snaps));
+  renderSnaps(); return snaps[snaps.length-1];
+}
+function listSnapshots(){ try{ return JSON.parse(localStorage.getItem(SNAP_KEY)||'[]'); }catch(e){ return []; } }
+function renderSnaps(){
+  const el=document.getElementById('snapList'); if(!el) return;
+  const snaps=listSnapshots().slice().reverse();
+  if(!snaps.length){ el.innerHTML='<div class="muted small">暂无快照，导入或清空前会自动创建</div>'; return; }
+  el.innerHTML=snaps.map(s=>{
+    const d=new Date(s.ts);
+    const ds=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+    return `<div class="snap-item"><span class="muted small">${ds} · ${esc(s.label)}</span><button class="btn ghost sm" onclick="restoreSnapshot('${s.id}')">恢复</button></div>`;
+  }).join('');
+}
+function restoreSnapshot(id){
+  const s=listSnapshots().find(x=>x.id===id); if(!s) return;
+  if(!confirm('恢复到该快照？当前未导出的改动将被覆盖。')) return;
+  state=migrate(JSON.parse(JSON.stringify(s.state))); save();
+  renderMe(); renderToday(); renderDiet(); renderEx(); renderBody(); renderSupps();
+  toast('已恢复快照');
+}
+
+/* 导入：预览 + 替换/合并，导入前自动快照防误操作 */
+let _pendingImport=null;
 function importData(){ document.getElementById('fileInput').click(); }
 function doImport(e){
-  const file=e.target.files[0]; if(!file) return;
-  const r=new FileReader(); r.onload=()=>{ try{ const s=JSON.parse(r.result); if(s&&s.profile){ state=migrate(s); save(); toast('已恢复'); renderMe(); renderToday(); renderBody(); renderEx(); renderSupps(); } }catch(err){ toast('文件格式错误'); } };
+  const file=e.target.files[0]; if(!file){ e.target.value=''; return; }
+  const r=new FileReader(); r.onload=()=>{ try{
+    const raw=JSON.parse(r.result);
+    const incoming = raw && raw.state ? raw.state : (raw && raw.profile ? raw : null);
+    if(!incoming){ toast('文件格式不正确（缺少 state/profile）'); e.target.value=''; return; }
+    _pendingImport=incoming;
+    const days=Object.keys(incoming.data||{}).sort();
+    const range = days.length? (days[0]+' ~ '+days[days.length-1]) : '无';
+    const c=dataCounts(incoming);
+    document.getElementById('importInfo').innerHTML =
+      `文件：<b>${esc(file.name)}</b><br>导出时间：${esc(String(raw.exportedAt||'(未知)'))} · 版本 ${esc(String(raw.version!=null?raw.version:'(旧版)'))}<br>`+
+      `含 ${c.days} 天数据、${c.plans} 计划、${c.supplements} 补剂、${c.customExercises} 自定义动作<br>日期范围：${range}`;
+    document.getElementById('importWarn').textContent = (raw.version!=null && raw.version>APP_VER)? '⚠️ 该备份来自更高版本，部分新字段可能无法识别。' : '';
+    document.getElementById('importMask').classList.add('show');
+  }catch(err){ toast('文件解析失败（不是合法 JSON）'); } finally{ e.target.value=''; } };
   r.readAsText(file);
 }
-function resetAll(){ if(confirm('确定清空所有数据？此操作不可恢复（请先导出备份）。')){ state={profile:{...DEFAULT_PROFILE},data:{},foods:[],plans:[],supplements:defaultSupps(),customActivities:[],customParts:[],customExercises:[],customExams:[]}; save(); toast('已清空'); renderMe(); renderToday(); renderBody(); renderEx(); renderSupps(); } }
+function applyImport(){
+  if(!_pendingImport) return;
+  takeSnapshot('导入前'); // 防误操作：先留底
+  const inc=migrate(JSON.parse(JSON.stringify(_pendingImport)));
+  const mode=document.getElementById('importMode').value;
+  if(mode==='replace'){
+    state=inc;
+  } else { // 合并：data 按日期（导入覆盖当天），数组按 id 去重合并，profile 保留当前
+    const cur=state, merged={...cur};
+    merged.data={...cur.data};
+    Object.keys(inc.data||{}).forEach(k=>{ merged.data[k]=inc.data[k]; });
+    ['foods','plans','supplements','customActivities','customParts','customExercises','customExams'].forEach(key=>{
+      const base=(cur[key]||[]).slice(); const seen=new Set(base.map(x=>x.id));
+      (inc[key]||[]).forEach(x=>{ if(x.id && !seen.has(x.id)){ base.push(x); seen.add(x.id); } });
+      merged[key]=base;
+    });
+    merged.profile=cur.profile;
+    state=merged;
+  }
+  save(); closeSheet('importMask'); _pendingImport=null;
+  renderMe(); renderToday(); renderDiet(); renderEx(); renderBody(); renderSupps();
+  toast(mode==='replace'?'已替换全部数据':'已合并数据（按日期/ID）');
+}
+
+function resetAll(){
+  if(confirm('确定清空所有数据？此操作不可恢复（请先导出备份）。')){
+    takeSnapshot('清空前');
+    state={profile:{...DEFAULT_PROFILE},data:{},foods:[],plans:[],supplements:defaultSupps(),customActivities:[],customParts:[],customExercises:[],customExams:[]};
+    save(); renderMe(); renderToday(); renderBody(); renderEx(); renderSupps();
+    toast('已清空');
+  }
+}
 
 /* ============ 初始化 ============ */
 function init(){
