@@ -1,8 +1,49 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
-  <rect x="0" y="0" width="512" height="512" rx="104" ry="104" fill="#c2410c"/>
-  <g fill="#ffffff">
-    <rect x="74" y="240" width="364" height="34" rx="17"/>
-    <circle cx="120" cy="257" r="80"/>
-    <circle cx="392" cy="257" r="80"/>
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="36%" r="80%">
+      <stop offset="0%" stop-color="#2c2018"/>
+      <stop offset="55%" stop-color="#15100d"/>
+      <stop offset="100%" stop-color="#080605"/>
+    </radialGradient>
+    <linearGradient id="bar" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f4f7fa"/>
+      <stop offset="45%" stop-color="#c2cad4"/>
+      <stop offset="55%" stop-color="#9aa3af"/>
+      <stop offset="100%" stop-color="#5c6470"/>
+    </linearGradient>
+    <linearGradient id="plate" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffb347"/>
+      <stop offset="45%" stop-color="#ff7a18"/>
+      <stop offset="100%" stop-color="#e8341c"/>
+    </linearGradient>
+    <linearGradient id="plateInner" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffd089"/>
+      <stop offset="100%" stop-color="#ff6a1a"/>
+    </linearGradient>
+    <filter id="glow" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="14" result="b"/>
+      <feMerge>
+        <feMergeNode in="b"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <rect x="0" y="0" width="512" height="512" rx="104" fill="url(#bg)"/>
+
+  <g filter="url(#glow)">
+    <!-- 横杆 -->
+    <rect x="150" y="246" width="212" height="24" rx="12" fill="url(#bar)"/>
+    <!-- 左负重片（外片 + 内片层叠） -->
+    <rect x="96" y="174" width="48" height="166" rx="20" fill="url(#plate)"/>
+    <rect x="140" y="194" width="32" height="126" rx="14" fill="url(#plateInner)"/>
+    <!-- 右负重片（外片 + 内片层叠） -->
+    <rect x="368" y="174" width="48" height="166" rx="20" fill="url(#plate)"/>
+    <rect x="340" y="194" width="32" height="126" rx="14" fill="url(#plateInner)"/>
+    <!-- 握把高亮 -->
+    <rect x="230" y="246" width="52" height="24" rx="12" fill="#f6f9fc"/>
   </g>
+
+  <!-- 杆体顶部高光，增强金属立体感 -->
+  <rect x="158" y="250" width="196" height="5" rx="2.5" fill="#ffffff" opacity="0.55"/>
 </svg>
