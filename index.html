@@ -690,18 +690,20 @@
 
     <div class="card">
       <h3><span class="bar" style="background:var(--green)"></span>减脂规划设置</h3>
-      <label class="fld"><span class="lab">每日热量缺口：<b id="defVal">500</b> kcal</span>
-        <input type="range" id="pDeficit" min="300" max="800" step="50" value="500" oninput="document.getElementById('defVal').textContent=this.value" />
+      <p class="muted small" style="margin-bottom:8px">按「体重系数」定值：每日目标 = 系数 × 体重(kg)。训练日再按训练量额外补充碳水（支撑训练与恢复）。</p>
+      <label class="fld"><span class="lab">碳水系数 <b id="cCw">3</b> g/kg</span>
+        <input type="number" id="mCw" min="1" max="8" step="0.1" value="3" oninput="syncPlanPreview()" />
       </label>
-      <label class="fld"><span class="lab">蛋白质 <b id="pP">35</b>%</span>
-        <input type="range" id="mP" min="20" max="50" step="5" value="35" oninput="syncMacros()" />
+      <label class="fld"><span class="lab">蛋白质系数 <b id="cPw">1.7</b> g/kg</span>
+        <input type="number" id="mPw" min="0.8" max="3" step="0.1" value="1.7" oninput="syncPlanPreview()" />
       </label>
-      <label class="fld"><span class="lab">碳水 <b id="pC">40</b>%</span>
-        <input type="range" id="mC" min="20" max="60" step="5" value="40" oninput="syncMacros()" />
+      <label class="fld"><span class="lab">脂肪系数 <b id="cFw">1</b> g/kg</span>
+        <input type="number" id="mFw" min="0.3" max="3" step="0.1" value="1" oninput="syncPlanPreview()" />
       </label>
-      <label class="fld"><span class="lab">脂肪 <b id="pF">25</b>% <span class="pill" id="macroSum">合计 100%</span></span>
-        <input type="range" id="mF" min="15" max="45" step="5" value="25" oninput="syncMacros()" />
+      <label class="fld"><span class="lab">训练日碳水补充 <b id="cPS">3</b> g/组</span>
+        <input type="number" id="mPS" min="0" max="10" step="0.5" value="3" oninput="syncPlanPreview()" />
       </label>
+      <div id="planPreview" class="muted small" style="margin:10px 0 4px;line-height:1.6"></div>
       <button class="btn ghost" onclick="savePlan()">保存规划</button>
     </div>
 
@@ -1043,7 +1045,7 @@
 /* ============ 数据层 ============ */
 const LS_KEY = 'health_workbench_v2';
 const DEFAULT_PROFILE = {gender:'male',age:30,height:170,weight:70,target:65,activity:'light',
-  deficit:500,macroP:35,macroC:40,macroF:25};
+  macroCw:3, macroPw:1.7, macroFw:1, carbPerSet:3};
 let state = load();
 function load(){
   try{ const s = JSON.parse(localStorage.getItem(LS_KEY)); if(s && s.profile){ return migrate(s); } }catch(e){}
@@ -1055,6 +1057,12 @@ function migrate(s){
   s.supplements.forEach(x=>{ if(!x.slot) x.slot=guessSlot(x.time); }); // 老数据自动归入时段
   s.customActivities = s.customActivities||[]; s.customParts = s.customParts||[];
   s.customExercises = s.customExercises||[]; s.customExams = s.customExams||[];
+  // 体重系数模型迁移：旧版百分比字段(macroP/C/F、deficit)已弃用，补上新系数默认值
+  s.profile = s.profile||{};
+  s.profile.macroCw = s.profile.macroCw ?? 3;
+  s.profile.macroPw = s.profile.macroPw ?? 1.7;
+  s.profile.macroFw = s.profile.macroFw ?? 1;
+  s.profile.carbPerSet = s.profile.carbPerSet ?? 3;
   Object.keys(s.data||{}).forEach(k=>{ const d=s.data[k]; d.diet=d.diet||[]; d.ex=d.ex||[]; d.strength=d.strength||[]; d.exam=d.exam||{}; d.supps=d.supps||{}; d.water=d.water||0; });
   return s;
 }
@@ -1080,13 +1088,24 @@ const ACT = {sedentary:1.2, light:1.375, moderate:1.55, high:1.725};
 function calcBMI(w,h){ return w/((h/100)**2); }
 function calcBMR(p){ const b=10*p.weight+6.25*p.height-5*p.age; return p.gender==='male'? b+5 : b-161; }
 function calcTDEE(p){ return calcBMR(p)*ACT[p.activity]; }
-function calcPlan(){
-  const p=state.profile; const tdee=calcTDEE(p); const deficit=p.deficit||500;
-  let target=tdee-deficit; const minC=p.gender==='male'?1500:1200; target=Math.max(target,minC);
-  const pp=p.macroP/100, cp=p.macroC/100, fp=p.macroF/100;
-  const pG=target*pp/4, cG=target*cp/4, fG=target*fp/9;
-  const weeklyLoss=(deficit*7)/7700;
-  return {tdee,target,pG,cG,fG,weeklyLoss,bmr:calcBMR(p),bmi:calcBMI(p.weight,p.height)};
+// 按体重系数定值 + 按训练量推荐：不依赖百分比。
+// 传入 date 时，按当日训练组数额外补充碳水（训练日更高碳水以支撑训练与恢复）。
+function calcPlan(date){
+  const p=state.profile; const w=p.weight||0;
+  // 基础（休息日）宏量：系数 × 体重(kg)
+  let pG=(p.macroPw||1.7)*w, cG=(p.macroCw||3)*w, fG=(p.macroFw||1)*w;
+  // 按训练量推荐：训练日每组额外补充碳水
+  let trainSets=0, trainVol=0;
+  if(date){ const d=state.data[date];
+    if(d&&d.strength) d.strength.forEach(s=>{(s.exercises||[]).forEach(ex=>{(ex.sets||[]).forEach(st=>{
+      if((st.reps||0)>0 && st.done!==false){ trainSets++; trainVol+=(st.weight||0)*(st.reps||0); }
+    });});});
+  }
+  const trainCarb=(p.carbPerSet||0)*trainSets; cG+=trainCarb;
+  const bmr=calcBMR(p), tdee=calcTDEE(p);
+  const target=pG*4+cG*4+fG*9;
+  const weeklyLoss=tdee>target?((tdee-target)*7)/7700:0;
+  return {tdee,target,pG,cG,fG,baseC:(p.macroCw||3)*w,trainCarb,trainSets,trainVol,weeklyLoss,bmr,bmi:calcBMI(p.weight,p.height)};
 }
 const ACTIVITIES={'walk_slow':{n:'散步',met:3.0},'walk_fast':{n:'快走',met:4.3},'run':{n:'慢跑',met:7.0},
   'run_fast':{n:'跑步8km/h',met:8.3},'swim':{n:'游泳',met:6.0},'bike':{n:'骑车',met:6.8},
@@ -1416,7 +1435,7 @@ async function fetchNewsFeed(){
 
 /* ============ 今日 ============ */
 function renderToday(){
-  const p=state.profile; const plan=calcPlan();
+  const p=state.profile; const plan=calcPlan(todayStr());
   const d=getDay(todayStr());
   const intake = d.diet.reduce((s,x)=>s+x.kcal,0);
   const pI=d.diet.reduce((s,x)=>s+x.p,0), cI=d.diet.reduce((s,x)=>s+x.c,0), fI=d.diet.reduce((s,x)=>s+x.f,0);
@@ -1525,6 +1544,7 @@ function buildAdvice(d,plan,intake,pI,cI,fI,exBurn){
   if(pI<plan.pG*0.8 && intake>0){ out.push({t:'warn',msg:`蛋白质摄入不足（${Math.round(pI)}/${Math.round(plan.pG)}g）。减脂期建议每餐有掌心大小的瘦肉/蛋/豆制品，保护肌肉。`}); }
   if(fI>plan.fG*1.15){ out.push({t:'warn',msg:`脂肪略超，注意少用油、少油炸与肥肉，坚果也要控量。`}); }
   if(cI>plan.cG*1.2){ out.push({t:'info',msg:'碳水偏高，优先把精米白面换成糙米、燕麦、薯类，血糖更稳、更抗饿。'}); }
+  if(plan.trainSets>0){ out.push({t:'good',msg:`今天训练 ${plan.trainSets} 组，已按训练量额外补充 ${Math.round(plan.trainCarb)}g 碳水；练后及时补充蛋白+碳水，助恢复与糖原回填。`}); }
   if(exBurn<200){ out.push({t:'info',msg:`今日运动消耗 ${Math.round(exBurn)} kcal，建议增加 30 分钟快走/家务活动，非运动消耗(NEAT)也很重要。`}); }
   else { out.push({t:'good',msg:`运动消耗达标（${Math.round(exBurn)} kcal），继续保持，配合饮食效果更佳。`}); }
   const water=Math.round((p.weight*33)/100)/10;
@@ -2826,11 +2846,13 @@ function scheduleSuppReminders(){
 
 /* ============ 我的 ============ */
 function setGender(btn){ document.querySelectorAll('#genderSeg button').forEach(b=>b.classList.remove('on')); btn.classList.add('on'); }
-function syncMacros(){
-  let p=+document.getElementById('mP').value, c=+document.getElementById('mC').value, f=+document.getElementById('mF').value;
-  document.getElementById('pP').textContent=p; document.getElementById('pC').textContent=c; document.getElementById('pF').textContent=f;
-  const sum=p+c+f; document.getElementById('macroSum').textContent='合计 '+sum+'%';
-  document.getElementById('macroSum').style.color = sum===100? 'var(--teal-d)':'var(--red)';
+function syncPlanPreview(){
+  const cw=+document.getElementById('mCw').value, pw=+document.getElementById('mPw').value, fw=+document.getElementById('mFw').value, ps=+document.getElementById('mPS').value;
+  document.getElementById('cCw').textContent=cw; document.getElementById('cPw').textContent=pw; document.getElementById('cFw').textContent=fw; document.getElementById('cPS').textContent=ps;
+  const w=state.profile.weight||0, cG=cw*w, pG=pw*w, fG=fw*w, kcal=pG*4+cG*4+fG*9;
+  document.getElementById('planPreview').innerHTML = w>0
+    ? `当前 ${w}kg → 蛋白 <b>${Math.round(pG)}g</b> · 碳水 <b>${Math.round(cG)}g</b> · 脂肪 <b>${Math.round(fG)}g</b> · 约 <b>${Math.round(kcal)}</b> kcal/天（休息日）`
+    : '填写体重后显示具体克数';
 }
 function renderMe(){
   const p=state.profile;
@@ -2838,17 +2860,19 @@ function renderMe(){
   document.getElementById('pAge').value=p.age; document.getElementById('pHeight').value=p.height;
   document.getElementById('pWeight').value=p.weight; document.getElementById('pTarget').value=p.target;
   document.getElementById('pActivity').value=p.activity;
-  document.getElementById('pDeficit').value=p.deficit; document.getElementById('defVal').textContent=p.deficit;
-  document.getElementById('mP').value=p.macroP; document.getElementById('mC').value=p.macroC; document.getElementById('mF').value=p.macroF;
-  syncMacros();
+  document.getElementById('mCw').value=p.macroCw; document.getElementById('mPw').value=p.macroPw; document.getElementById('mFw').value=p.macroFw; document.getElementById('mPS').value=p.carbPerSet;
+  syncPlanPreview();
   const plan=calcPlan();
   document.getElementById('planSummary').innerHTML = p.height>0 ? `
     <table class="kv">
       <tr><td>BMI / 当前体重</td><td>${plan.bmi.toFixed(1)} / ${p.weight}kg</td></tr>
       <tr><td>基础代谢 BMR</td><td>${Math.round(plan.bmr)} kcal</td></tr>
       <tr><td>每日总消耗 TDEE</td><td>${Math.round(plan.tdee)} kcal</td></tr>
-      <tr><td>建议摄入（目标）</td><td style="color:var(--green-d)">${Math.round(plan.target)} kcal</td></tr>
-      <tr><td>蛋白质 / 碳水 / 脂肪</td><td>${Math.round(plan.pG)} / ${Math.round(plan.cG)} / ${Math.round(plan.fG)} g</td></tr>
+      <tr><td>蛋白质（${p.macroPw||1.7} g/kg）</td><td style="color:var(--green-d)">${Math.round(plan.pG)} g</td></tr>
+      <tr><td>碳水（${p.macroCw||3} g/kg）</td><td style="color:var(--green-d)">${Math.round(plan.baseC)} g</td></tr>
+      <tr><td>脂肪（${p.macroFw||1} g/kg）</td><td style="color:var(--green-d)">${Math.round(plan.fG)} g</td></tr>
+      <tr><td>休息日目标热量</td><td style="color:var(--green-d)">${Math.round(plan.target)} kcal</td></tr>
+      <tr><td>训练日碳水补充</td><td>+${(p.carbPerSet||0)} g/组（按当日训练量自动叠加）</td></tr>
       <tr><td>预计每周减重</td><td>≈ ${plan.weeklyLoss.toFixed(2)} kg</td></tr>
       <tr><td>预计达成目标</td><td>${etaText(plan)}</td></tr>
     </table>` : '<div class="empty">填写资料后显示专属方案</div>';
@@ -2872,9 +2896,10 @@ function saveProfile(){
 }
 function savePlan(){
   const p=state.profile;
-  p.deficit=+document.getElementById('pDeficit').value;
-  p.macroP=+document.getElementById('mP').value; p.macroC=+document.getElementById('mC').value; p.macroF=+document.getElementById('mF').value;
-  if(p.macroP+p.macroC+p.macroF!==100){ toast('三大营养素比例需合计 100%'); return; }
+  p.macroCw=+document.getElementById('mCw').value||3;
+  p.macroPw=+document.getElementById('mPw').value||1.7;
+  p.macroFw=+document.getElementById('mFw').value||1;
+  p.carbPerSet=+document.getElementById('mPS').value||0;
   save(); toast('规划已保存'); renderMe(); renderToday();
 }
 /* ============ 数据管理（Route E） ============ */
