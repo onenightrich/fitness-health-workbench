@@ -293,6 +293,9 @@
   .tset input{width:62px;padding:7px 8px;border-radius:9px;border:1px solid var(--line2);background:var(--bg2);color:var(--txt);font-size:14px;text-align:center;font-family:var(--mono);}
   .tset.sdone .sv{color:var(--good);font-weight:700;font-size:14px;}
   .tset.sdone .sdoneb{margin-left:auto;color:var(--good);font-size:12px;font-weight:700;}
+  .tset.sdone input{background:#fff7ed;border-color:#fed7aa;}
+  .tset .sdoneb.click{cursor:pointer;}
+  .tset .sdoneb.click:active{transform:scale(.97);}
   .donebtn{margin-left:auto;}
   .cfphoto{display:inline-flex;align-items:center;justify-content:center;min-width:120px;padding:12px 14px;border-radius:12px;border:1.5px dashed var(--line2);background:var(--card2);color:var(--accent);font-weight:700;cursor:pointer;font-size:14px;}
   .cfphoto img{width:100%;max-height:160px;border-radius:8px;object-fit:cover;}
@@ -2360,7 +2363,9 @@ function renderTraining(){
       html+=`<div class="tset ${s.done?'sdone':''} ${cur?'scur':''}">`;
       html+=`<span class="sn">${si+1}</span>`;
       if(s.done){
-        html+=`<span class="sv">${s.weight}kg × ${s.reps}</span><span class="sdoneb">已完成</span>`;
+        html+=`<span class="sv sved"><input class="tw" id="tw_${ei}_${si}" value="${s.weight}" oninput="trainEditSet(${ei},${si})"/>kg × <input class="tr" id="tr_${ei}_${si}" value="${s.reps}" oninput="trainEditSet(${ei},${si})"/>次</span>`;
+        html+=`<span class="sdoneb click" title="点击可撤销完成并修改" onclick="undoSet(${ei},${si})">已完成 ✓ · 点此改</span>`;
+        html+=`<span class="sdel" title="删除这组" onclick="trainRemoveSet(${ei},${si})">−</span>`;
       } else {
         html+=`<span class="sin"><input class="tw" id="tw_${ei}_${si}" value="${s.weight}" oninput="trainEditSet(${ei},${si})"/>kg</span>`;
         html+=`<span class="sin"><input class="tr" id="tr_${ei}_${si}" value="${s.reps}" oninput="trainEditSet(${ei},${si})"/>次</span>`;
@@ -2506,6 +2511,7 @@ function confirmTrainAdd(){
   closeSheet('trainAddMask'); renderTraining(); toast('已加入本次训练');
 }
 function trainEditSet(ei,si){ const ex=T.logs[ei]; if(!ex||!ex.sets[si]) return; const w=document.getElementById('tw_'+ei+'_'+si); const r=document.getElementById('tr_'+ei+'_'+si); if(w) ex.sets[si].weight=parseFloat(w.value)||0; if(r) ex.sets[si].reps=parseInt(r.value)||0; }
+function undoSet(ei,si){ const ex=T.logs[ei]; if(!ex||!ex.sets[si]) return; if(!confirm('撤销该组「已完成」状态？撤销后可重新修改重量/次数并重新计时。')) return; ex.sets[si].done=false; renderTraining(); }
 function trainAddSet(ei){ const ex=T.logs[ei]; if(!ex) return; ex.sets.push({weight:0,reps:0,done:false}); renderTraining(); }
 function trainRemoveSet(ei,si){ const ex=T.logs[ei]; if(!ex) return; if(ex.sets.length<=1){ toast('至少保留 1 组'); return; } ex.sets.splice(si,1); renderTraining(); }
 function trainRemoveEx(ei){ if(!confirm('从本次训练中移除该动作？')) return; T.logs.splice(ei,1); renderTraining(); }
