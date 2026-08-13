@@ -965,6 +965,18 @@
   </div>
 </div>
 
+<!-- App Confirm Sheet (replaces native confirm for in-app destructive actions) -->
+<div class="mask" id="appConfirmMask">
+  <div class="sheet" style="max-width:400px">
+    <h4 id="appConfirmTitle">确认操作</h4>
+    <p class="muted small" id="appConfirmMsg" style="margin:0 0 16px;line-height:1.5"></p>
+    <div class="navbtns">
+      <button class="btn ghost" onclick="appConfirmCancel()">取消</button>
+      <button class="btn danger" onclick="appConfirmYes()">确认</button>
+    </div>
+  </div>
+</div>
+
 <!-- Exam Sheet -->
 <div class="mask" id="examMask">
   <div class="sheet">
@@ -2511,10 +2523,20 @@ function confirmTrainAdd(){
   closeSheet('trainAddMask'); renderTraining(); toast('已加入本次训练');
 }
 function trainEditSet(ei,si){ const ex=T.logs[ei]; if(!ex||!ex.sets[si]) return; const w=document.getElementById('tw_'+ei+'_'+si); const r=document.getElementById('tr_'+ei+'_'+si); if(w) ex.sets[si].weight=parseFloat(w.value)||0; if(r) ex.sets[si].reps=parseInt(r.value)||0; }
-function undoSet(ei,si){ const ex=T.logs[ei]; if(!ex||!ex.sets[si]) return; if(!confirm('撤销该组「已完成」状态？撤销后可重新修改重量/次数并重新计时。')) return; ex.sets[si].done=false; renderTraining(); }
+/* 应用内确认弹层：替代原生 confirm（移动端 PWA 中原生 confirm 常不弹/被忽略） */
+let _appConfirmCb=null;
+function appConfirm(msg, cb, title){
+  document.getElementById('appConfirmMsg').textContent=msg;
+  document.getElementById('appConfirmTitle').textContent=title||'确认操作';
+  _appConfirmCb=cb;
+  document.getElementById('appConfirmMask').classList.add('show');
+}
+function appConfirmYes(){ const cb=_appConfirmCb; _appConfirmCb=null; closeSheet('appConfirmMask'); if(cb) cb(); }
+function appConfirmCancel(){ _appConfirmCb=null; closeSheet('appConfirmMask'); }
+function undoSet(ei,si){ const ex=T.logs[ei]; if(!ex||!ex.sets[si]) return; appConfirm('撤销该组「已完成」状态？撤销后可重新修改重量/次数并重新计时。', ()=>{ ex.sets[si].done=false; renderTraining(); }); }
 function trainAddSet(ei){ const ex=T.logs[ei]; if(!ex) return; ex.sets.push({weight:0,reps:0,done:false}); renderTraining(); }
-function trainRemoveSet(ei,si){ const ex=T.logs[ei]; if(!ex) return; if(ex.sets.length<=1){ toast('至少保留 1 组'); return; } ex.sets.splice(si,1); renderTraining(); }
-function trainRemoveEx(ei){ if(!confirm('从本次训练中移除该动作？')) return; T.logs.splice(ei,1); renderTraining(); }
+function trainRemoveSet(ei,si){ const ex=T.logs[ei]; if(!ex) return; if(ex.sets.length<=1){ toast('至少保留 1 组'); return; } appConfirm('删除这一组？', ()=>{ ex.sets.splice(si,1); renderTraining(); }); }
+function trainRemoveEx(ei){ appConfirm('从本次训练中移除该动作？', ()=>{ if(T){ T.logs.splice(ei,1); renderTraining(); } }); }
 
 /* ============ 动作库（exercises-dataset） ============ */
 /* 动作库已内联打包进本文件（hasaneyldrm/exercises-dataset，1324 动作，含中文指导），
