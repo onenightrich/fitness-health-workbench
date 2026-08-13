@@ -409,6 +409,25 @@
 .an-prrow.new td:last-child{color:var(--good);}
 .an-tip{font-size:12px;color:var(--sub);line-height:1.5;margin:8px 0;}
 .tplast{font-size:11px;color:var(--sub);font-weight:500;margin-left:6px;}
+  /* 今日行动聚合卡 */
+  .actionlist{display:flex;flex-direction:column;gap:7px;}
+  .action-item{display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:10px;background:#faf8f4;cursor:pointer;border:1px solid var(--line);}
+  .action-item .ai-ic{font-size:18px;width:24px;text-align:center;flex:none;}
+  .action-item .ai-tx{flex:1;font-size:13px;line-height:1.35;}
+  .action-item .ai-tx b{font-weight:500;}
+  .action-item .ai-st{font-size:12px;font-weight:500;flex:none;}
+  .action-item.done{opacity:.62;}
+  .action-item.done .ai-st{color:#16a34a;}
+  .action-item.todo .ai-st{color:var(--accent);}
+  .action-prog{height:6px;border-radius:3px;background:#e7e3dc;overflow:hidden;margin-top:6px;}
+  .action-prog i{display:block;height:100%;background:#10b981;border-radius:3px;}
+  /* 训练后补给 */
+  .refuel-macros{display:flex;gap:14px;margin:8px 0 10px;font-size:13px;}
+  .refuel-macros b{color:var(--indigo);}
+  /* 提醒设置 */
+  .remset{margin-top:10px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;display:flex;flex-direction:column;gap:8px;background:#faf8f4;}
+  .remrow{display:flex;align-items:center;gap:8px;font-size:13px;}
+  .remrow input{width:18px;height:18px;accent-color:var(--accent);flex:none;}
 </style>
 </head>
 <body>
@@ -427,6 +446,11 @@
   <!-- 今日 -->
   <section class="section show" id="sec-today">
     <div id="todayBanner"></div>
+
+    <div class="card action" id="todayActionCard" style="display:none">
+      <h3><span class="bar" style="background:var(--accent)"></span>今日行动<span class="sub" id="actionDate"></span></h3>
+      <div id="actionList" class="actionlist"></div>
+    </div>
 
     <div class="hero">
       <div class="greet" id="greet">你好 👋</div>
@@ -489,6 +513,12 @@
     <div class="card" id="todayTrainCard" style="display:none">
       <h3><span class="bar" style="background:var(--indigo)"></span>今日训练<span class="sub" id="todayTrainSub"></span></h3>
       <div id="todayTrainBody"></div>
+    </div>
+
+    <!-- 训练后补给 -->
+    <div class="card" id="trainRefuelCard" style="display:none">
+      <h3><span class="bar" style="background:var(--indigo)"></span>训练后补给<span class="sub">练后 30 分钟内补充最佳</span></h3>
+      <div id="trainRefuelBody"></div>
     </div>
 
     <!-- 待服补剂 -->
@@ -658,7 +688,14 @@
       </div>
       <div id="suppToday"></div>
       <div class="hr" style="height:1px;background:var(--line);margin:12px 0"></div>
-      <button class="btn ghost sm" onclick="scheduleSuppReminders()">🔔 开启今日提醒（通知）</button>
+      <button class="btn ghost sm" onclick="toggleRemSet()">🔔 提醒设置</button>
+      <div class="remset" id="remSet" style="display:none">
+        <label class="remrow"><input type="checkbox" id="remTrain" onchange="saveReminders()" /> <span>训练提醒（当天未练则傍晚 18:30 提醒）</span></label>
+        <label class="remrow"><input type="checkbox" id="remWeigh" onchange="saveReminders()" /> <span>称重提醒（每天 08:30，若当天未称重）</span></label>
+        <label class="remrow"><input type="checkbox" id="remWater" onchange="saveReminders()" /> <span>喝水提醒（每 90 分钟一次）</span></label>
+        <label class="remrow"><input type="checkbox" id="remSupp" onchange="saveReminders()" /> <span>补剂提醒（按各补剂时间）</span></label>
+        <button class="btn sm" onclick="applyRemindersNow()">应用并开启通知</button>
+      </div>
     </div>
   </section>
 
@@ -1079,6 +1116,7 @@ function migrate(s){
   s.profile.macroFw = s.profile.macroFw ?? 1;
   s.profile.carbPerSet = s.profile.carbPerSet ?? 3;
   Object.keys(s.data||{}).forEach(k=>{ const d=s.data[k]; d.diet=d.diet||[]; d.ex=d.ex||[]; d.strength=d.strength||[]; d.exam=d.exam||{}; d.supps=d.supps||{}; d.water=d.water||0; });
+  s.reminders = s.reminders || {train:true, weigh:true, water:true, supp:true};
   return s;
 }
 function defaultSupps(){
@@ -1490,6 +1528,75 @@ function renderToday(){
   renderAdvice(d,plan,intake,pI,cI,fI,exBurn);
   // 饮水
   renderWater();
+  // 今日行动聚合 + 训练后补给
+  renderTodayAction(d,plan,intake);
+  renderTrainRefuel(d,plan);
+}
+function renderTodayAction(d,plan,intake){
+  const card=document.getElementById('todayActionCard');
+  const list=document.getElementById('actionList');
+  if(!list) return;
+  const items=[];
+  // 训练
+  const trained = d.strength.length>0;
+  items.push({ic:'🏋️', t: trained? `今日已训练 <b>${d.strength[d.strength.length-1].setsCount}</b> 组` : '今天还没训练，去练一下？',
+    st: trained?'已完成':'去训练', cls: trained?'done':'todo', go:'exercise'});
+  // 饮食
+  const ratio = plan.target? Math.min(intake/plan.target,1):0;
+  const eaten = Math.round(intake), tgt=Math.round(plan.target);
+  items.push({ic:'🍱', t: `饮食 <b>${eaten}/${tgt}</b> kcal${intake===0?'，还没开吃':''}`,
+    st: intake===0?'去记录':Math.round(ratio*100)+'%', cls: intake>=plan.target*0.5?'done':'todo', go:'diet',
+    prog: ratio});
+  // 补剂
+  const total=state.supplements.length, done=state.supplements.filter(s=>d.supps[s.id]).length;
+  items.push({ic:'💊', t: total? `补剂 <b>${done}/${total}</b> 已服` : '暂无补剂，去添加',
+    st: total? (done>=total?'已完成':done+'/'+total):'去添加', cls: total&&done>=total?'done':'todo', go:'supplements',
+    prog: total? done/total:0});
+  // 称重
+  const weighed = d.weight!=null;
+  items.push({ic:'⚖️', t: weighed? `今日已称重 <b>${d.weight}</b> kg` : '今天还没称重（建议固定时间）',
+    st: weighed?'已完成':'去称重', cls: weighed?'done':'todo', go:'body'});
+  list.innerHTML = items.map(it=>`<div class="action-item ${it.cls}" onclick="goTab('${it.go}')">
+    <div class="ai-ic">${it.ic}</div>
+    <div class="ai-tx">${it.t}${it.prog!=null?`<div class="action-prog"><i style="width:${Math.round(Math.min(it.prog,1)*100)}%"></i></div>`:''}</div>
+    <div class="ai-st">${it.st}</div></div>`).join('');
+  document.getElementById('actionDate').textContent = todayStr().slice(5);
+  card.style.display = 'block';
+}
+function renderTrainRefuel(d,plan){
+  const card=document.getElementById('trainRefuelCard');
+  const body=document.getElementById('trainRefuelBody');
+  if(!card||!body) return;
+  if(plan.trainSets<=0){ card.style.display='none'; return; }
+  card.style.display='block';
+  const w=state.profile.weight||0;
+  const carb=Math.round(plan.trainCarb), protein=Math.round(0.3*w), fat=5;
+  const kcal=protein*4+carb*4+fat*9;
+  if(d.trainRefuel){
+    body.innerHTML = `<div class="refuel-row"><div class="muted small">已记录训练后补给：蛋白 <b>${d.trainRefuel.p}</b>g · 碳水 <b>${d.trainRefuel.c}</b>g · 脂肪 <b>${d.trainRefuel.f}</b>g（${d.trainRefuel.kcal} kcal）</div>
+      <button class="btn ghost sm" onclick="undoTrainRefuel()">撤销</button></div>`;
+    return;
+  }
+  body.innerHTML = `<div class="muted small">今天练了 <b>${plan.trainSets}</b> 组，建议练后 30 分钟内补充快碳 + 蛋白，加速糖原回填与肌肉恢复：</div>
+    <div class="refuel-macros"><span>蛋白 <b>${protein}g</b></span><span>碳水 <b>${carb}g</b></span><span>脂肪 <b>${fat}g</b></span><span>≈ <b>${kcal}</b> kcal</span></div>
+    <button class="btn indigo sm" onclick="markTrainRefuel()">我已吃够，记录补给</button>`;
+}
+function markTrainRefuel(){
+  const d=getDay(todayStr()); const w=state.profile.weight||0;
+  if(d.trainRefuel){ toast('已记录'); return; }
+  const p=Math.round(0.3*w), c=Math.round((state.profile.carbPerSet||0)*0), fat=5;
+  const carb=Math.round(calcPlan(todayStr()).trainCarb);
+  const kcal=p*4+carb*4+fat*9;
+  d.diet.push({name:'训练后补给', p, c:carb, f:fat, kcal, refuel:true});
+  d.trainRefuel={p,c:carb,f:fat,kcal};
+  save(); renderToday(); toast('已记录训练后补给 💪');
+}
+function undoTrainRefuel(){
+  const d=getDay(todayStr());
+  if(!d.trainRefuel) return;
+  d.diet=d.diet.filter(x=>!x.refuel);
+  d.trainRefuel=false;
+  save(); renderToday(); toast('已撤销补给记录');
 }
 function waterGoalMl(){ const w=state.profile.weight||0; return w>0? Math.round(w*33):2000; }
 function renderWater(){
@@ -2860,17 +2967,58 @@ function toggleSuppToday(id){
     }
   }
 }
-function scheduleSuppReminders(){
-  if(!('Notification' in window)){ toast('当前浏览器不支持通知，请手动打卡'); return; }
+/* ============ 智能提醒引擎（可配置：训练/称重/喝水/补剂） ============ */
+let REM_TIMERS=[];
+function notify(title,body){
+  try{ if('Notification' in window && Notification.permission==='granted'){ new Notification(title,{body:body||''}); return; } }catch(e){}
+  toast(body||title);
+}
+function clearReminders(){ REM_TIMERS.forEach(t=>{ try{clearTimeout(t);clearInterval(t);}catch(e){} }); REM_TIMERS=[]; }
+function scheduleAt(hhmm,fn){
+  const p=(hhmm||'09:00').split(':'); const h=+p[0]||9, m=+p[1]||0;
+  const now=new Date(); const tg=new Date(now); tg.setHours(h,m,0,0);
+  let diff=tg-now;
+  if(diff<=0){ fn(); return; }   // 今天该时刻已过：打开即 catch-up 提醒一次
+  const id=setTimeout(fn,diff); REM_TIMERS.push(id);
+}
+function toggleRemSet(){
+  const el=document.getElementById('remSet'); if(!el) return;
+  const show = el.style.display==='none';
+  el.style.display = show?'flex':'none';
+  if(show){ const r=state.reminders||{};
+    document.getElementById('remTrain').checked=!!r.train;
+    document.getElementById('remWeigh').checked=!!r.weigh;
+    document.getElementById('remWater').checked=!!r.water;
+    document.getElementById('remSupp').checked=!!r.supp;
+  }
+}
+function saveReminders(){
+  state.reminders = {
+    train: document.getElementById('remTrain').checked,
+    weigh: document.getElementById('remWeigh').checked,
+    water: document.getElementById('remWater').checked,
+    supp: document.getElementById('remSupp').checked
+  };
+  save();
+}
+function startReminderEngine(){
+  if(!('Notification' in window)){ toast('当前浏览器不支持系统通知，已用应用内提醒'); }
+  clearReminders();
+  const r=state.reminders||{}; const d=getDay(todayStr());
+  if(r.supp){ state.supplements.forEach(s=>{ const tm=/(\d{1,2}):(\d{2})/.test(s.time||'')? s.time : '09:00'; scheduleAt(tm, ()=>notify('💊 补剂提醒', slotInfo(s.slot).ic+' '+slotInfo(s.slot).n+' · 该服用 '+s.name+(s.dose?'（'+s.dose+'）':''))); }); }
+  if(r.train && !d.strength.length){ scheduleAt('18:30', ()=>notify('🏋️ 训练提醒','今天还没训练，去练一下？点开工作台即可开始')); }
+  if(r.weigh && d.weight==null){ scheduleAt('08:30', ()=>notify('⚖️ 称重提醒','今天还没称重，建议固定时间空腹称重，数据更准')); }
+  if(r.water){ const id=setInterval(()=>notify('💧 喝水提醒','该补水了，少量多次更健康'), 90*60*1000); REM_TIMERS.push(id); }
+}
+function applyRemindersNow(){
+  if(!('Notification' in window)){ toast('当前浏览器不支持系统通知，已用应用内提醒'); saveReminders(); startReminderEngine(); return; }
   Notification.requestPermission().then(perm=>{
-    if(perm!=='granted'){ toast('未授权通知，可手动打卡'); return; }
-    const pending=state.supplements;
-    toast('已设置提醒，将在页面打开时提示');
-    pending.forEach((s,i)=>{
-      setTimeout(()=>{ try{ const sl=slotInfo(s.slot); new Notification('💊 补剂提醒',{body:`${sl.ic} ${sl.n} · 该服用 ${s.name}（${s.dose||''}）`}); }catch(e){} }, 4000+i*1500);
-    });
+    saveReminders();
+    if(perm!=='granted'){ toast('未授权系统通知，已用应用内提醒'); }
+    startReminderEngine();
   });
 }
+function scheduleSuppReminders(){ applyRemindersNow(); }  // 兼容旧入口
 
 /* ============ 我的 ============ */
 function setGender(btn){ document.querySelectorAll('#genderSeg button').forEach(b=>b.classList.remove('on')); btn.classList.add('on'); }
@@ -3071,6 +3219,7 @@ function init(){
     document.getElementById(id).addEventListener('click',e=>{ if(e.target.id===id) closeSheet(id); }));
   document.getElementById('trainOverlay').addEventListener('click',e=>{ if(e.target.id==='trainOverlay'){} });
   setInterval(()=>{ if(T) document.getElementById('trainTime').textContent=fmtMMSS(Math.floor((Date.now()-T.startedAt)/1000)); },1000);
+  if('Notification' in window && Notification.permission==='granted'){ startReminderEngine(); }
 }
 init();
 
